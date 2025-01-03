@@ -3404,7 +3404,6 @@ dependencies = [
  "vexide-async",
  "vexide-core",
  "vexide-devices",
- "vexide-graphics",
  "vexide-macro",
  "vexide-panic",
  "vexide-startup",
@@ -3454,19 +3453,6 @@ dependencies = [
  "snafu",
  "vex-sdk",
  "vexide-core",
-]
-
-[[package]]
-name = "vexide-graphics"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d130e6171ee04af829de5cea007dc43b01ed0051a64884706e96bb702e0b48e3"
-dependencies = [
- "slint",
- "vex-sdk",
- "vexide-async",
- "vexide-core",
- "vexide-devices",
 ]
 
 [[package]]
