@@ -1,0 +1,13 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cargo",
+      "command": "check",
+      "args": ["--example", "basic"],
+      "problemMatcher": ["$rustc"],
+      "group": "build",
+      "label": "rust: cargo check basic example"
+    }
+  ]
+}

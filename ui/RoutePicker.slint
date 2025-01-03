@@ -1,0 +1,71 @@
+import { Palette, ScrollView } from "std-widgets.slint";
+
+component RouteCard {
+    in property <string> route;
+    in property <int> i;
+
+    callback clicked();
+
+    ta := TouchArea {
+        background := Rectangle {
+            background: Palette.accent-background.with-alpha(0.5);
+            animate background {
+                duration: 200ms;
+                easing: ease-in-out;
+            }
+            border-radius: 12px;
+
+            Text {
+                text: route;
+                font-size: 24px;
+            }
+        }
+
+        clicked => {
+            clicked();
+        }
+    }
+
+    states [
+        hover when ta.has-hover: {
+            background.background: Palette.accent-background.with-alpha(0.8);
+        }
+    ]
+}
+
+export component RoutePicker {
+    in property <[string]> routes;
+
+    property <length> scrollable-width: 452px;
+    property <length> tile-height: 62px;
+    property <length> gap: 8px;
+
+    callback selected(i: int);
+
+    Rectangle {
+        background: Palette.alternate-background.with-alpha(0.5);
+        border-color: Palette.border;
+        border-width: 1px;
+        border-radius: 16px;
+
+        ScrollView {
+            width: 100%;
+            viewport-width: scrollable-width;
+            viewport-height: floor(routes.length / 2) * (tile-height + gap) - gap;
+
+            for route[i] in routes: RouteCard {
+                route: route;
+                i: i;
+
+                x: mod(i, 2) * scrollable-width / 2 + gap;
+                y: floor(i / 2) * (tile-height + gap) + gap;
+                width: scrollable-width / 2 - gap;
+                height: tile-height;
+
+                clicked => {
+                    selected(i);
+                }
+            }
+        }
+    }
+}

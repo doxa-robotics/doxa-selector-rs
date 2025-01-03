@@ -1,0 +1,114 @@
+import { CategoryPicker, Category } from "CategoryPicker.slint";
+import { RoutePicker } from "RoutePicker.slint";
+import { VerticalBox, Palette } from "std-widgets.slint";
+import { Chip } from "Chip.slint";
+
+export global BrainDimensions {
+    out property <length> width: 480px;
+    out property <length> height: 240px;
+}
+
+export component MainPicker {
+    in property <[Category]> categories;
+    property <int> category-id: -1;
+
+    callback picked(category-id: int, route-id: int);
+
+    Rectangle {
+        background: Palette.background;
+        vertical-stretch: 1;
+
+        Image {
+            x: parent.width - self.width;
+            y: parent.height - self.height;
+            opacity: 0.2;
+            source: @image-url("../examples/doxa-logo-cropped.png");
+        }
+
+        VerticalBox {
+            padding: 8px;
+
+            HorizontalLayout {
+                height: 28px;
+
+                Rectangle {
+                    horizontal-stretch: 1;
+
+                    Text {
+                        text: "Select category";
+                        font-size: 24px;
+                        x: 0;
+                        opacity: category-id < 0 ? 1 : 0;
+                        animate opacity {
+                            duration: 500ms;
+                            easing: ease-in-out;
+                        }
+                    }
+
+                    Text {
+                        text: "Choose route";
+                        font-size: 24px;
+                        x: 0;
+                        opacity: category-id < 0 ? 0 : 1;
+                        animate opacity {
+                            duration: 500ms;
+                            easing: ease-in-out;
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 4px;
+                    for category[i] in categories: Chip {
+                        checked: category-id == i;
+                        text: category.name;
+                        on-checked(new) => {
+                            if (new) {
+                                category-id = i;
+                            } else {
+                                category-id = -1;
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                vertical-stretch: 1;
+
+                RoutePicker {
+                    x: (category-id >= 0) ? 0px : BrainDimensions.width;
+                    opacity: (category-id >= 0) ? 1 : 0;
+                    animate x, opacity {
+                        duration: 500ms;
+                        easing: ease-in-out;
+                    }
+                    width: 100%;
+                    height: 100%;
+
+                    routes: categories[category-id].routes;
+
+                    selected(i) => {
+                        picked(category-id, i);
+                    }
+                }
+
+                CategoryPicker {
+                    x: (category-id < 0) ? 0px : -BrainDimensions.width;
+                    opacity: (category-id < 0) ? 1 : 0;
+                    animate x, opacity {
+                        duration: 500ms;
+                        easing: ease-in-out;
+                    }
+                    width: 100%;
+                    height: 100%;
+
+                    categories: categories;
+                    selected(i) => {
+                        category-id = i;
+                    }
+                }
+            }
+        }
+    }
+}

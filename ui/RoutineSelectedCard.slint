@@ -1,0 +1,85 @@
+import { AboutSlint, VerticalBox, Button, GroupBox, Palette } from "std-widgets.slint";
+
+export component RoutineSelectedCard {
+    in property <string> route-name;
+    in property <string> category-name;
+
+    callback edit();
+    callback done();
+
+    Rectangle {
+        background: Palette.background;
+        vertical-stretch: 1;
+
+        Image {
+            x: parent.width - self.width;
+            y: parent.height - self.height;
+            opacity: 0.2;
+            source: @image-url("../examples/doxa-logo-cropped.png");
+        }
+
+        Rectangle {
+            border-color: Palette.border;
+            border-width: 1px;
+            width: 320px;
+            height: 190px;
+            x: parent.width / 2 - self.width / 2;
+            y: parent.height / 2 - self.height / 2;
+            border-radius: 16px;
+            background: Palette.background.with-alpha(0.7);
+
+            VerticalBox {
+                Text {
+                    text: "Confirm currently queued route:";
+                    font-size: 12px;
+                    color: Palette.foreground.with-alpha(0.8);
+                    horizontal-alignment: center;
+                }
+
+                Rectangle {
+                    background: Palette.accent-background;
+                    border-radius: self.height / 2;
+
+                    VerticalLayout {
+                        padding-top: 8px;
+                        padding-bottom: 8px;
+                        padding-left: 16px;
+                        padding-right: 16px;
+
+                        Text {
+                            text: route-name;
+                            color: Palette.accent-foreground;
+                            font-size: 24px;
+                            horizontal-alignment: center;
+                        }
+
+                        Text {
+                            text: category-name;
+                            font-size: 14px;
+                            color: Palette.accent-foreground.with-alpha(0.6);
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 8px;
+
+                    Button {
+                        text: "Edit";
+                        clicked => {
+                            edit()
+                        }
+                    }
+
+                    Button {
+                        text: "Done";
+                        clicked => {
+                            done()
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

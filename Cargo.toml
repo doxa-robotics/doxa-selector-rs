@@ -1,5 +1,5 @@
 [package]
-name = "vexide-template"
+name = "doxa-selector-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -12,4 +12,14 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide = "0.5.1"
+vexide = { version = "0.5.2", features = ["slint"] }
+slint = { version = "1.9.1", default-features = false, features = [
+  "compat-1-2",
+  "unsafe-single-threaded",
+  "libm",
+  "renderer-software",
+] }
+async-trait = "0.1.83"
+
+[build-dependencies]
+slint-build = "1.8.0"

@@ -1,0 +1,70 @@
+import { Palette } from "std-widgets.slint";
+export component Chip {
+    in property <bool> checked: false;
+    in property <string> text;
+    callback on-checked(new: bool);
+
+    ta := TouchArea {
+        background := Rectangle {
+            background: Palette.control-background;
+            border-radius: 8px;
+            border-width: 1px;
+            border-color: Palette.border;
+
+            animate background, border-width {
+                duration: 200ms;
+                easing: ease-in-out;
+            }
+            HorizontalLayout {
+                padding-left: 12px;
+                padding-right: 12px;
+                spacing: checked ? 6px : 0px;
+                animate spacing {
+                    duration: 200ms;
+                    easing: ease-in-out;
+                }
+
+                icon := Image {
+                    source: @image-url("../examples/check-icon.png");
+                    colorize: Palette.control-foreground;
+                    width: checked ? 18px : 1px;
+                    opacity: checked ? 1 : 0;
+                    animate colorize, opacity, width {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                    height: 18px;
+                    y: parent.height / 2 - self.height / 2;
+                }
+
+                txt := Text {
+                    text: text;
+                    vertical-alignment: center;
+                    color: Palette.control-foreground;
+                    animate color {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+                }
+            }
+        }
+
+        clicked => {
+            on-checked(!checked);
+        }
+    }
+
+    states [
+        checked when checked: {
+            background.background: Palette.accent-background;
+            background.border-width: 0px;
+            icon.colorize: Palette.accent-foreground;
+            txt.color: Palette.accent-foreground;
+        }
+        hover when !checked && ta.has-hover: {
+            background.background: Palette.selection-background;
+            icon.colorize: Palette.selection-foreground;
+            txt.color: Palette.selection-foreground;
+        }
+    ]
+}
