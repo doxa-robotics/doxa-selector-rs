@@ -6,42 +6,40 @@ extern crate alloc;
 
 mod platform;
 
-use alloc::{boxed::Box, collections::btree_map::BTreeMap, rc::Rc, vec::Vec};
+use alloc::{
+    boxed::Box,
+    collections::btree_map::BTreeMap,
+    string::{String, ToString},
+    vec::Vec,
+};
 use core::{
-    cell::RefCell,
-    error::Error,
     fmt::{Debug, Display},
     ops::ControlFlow,
-    sync::atomic::AtomicBool,
     time::Duration,
 };
 
 use async_trait::async_trait;
 use platform::slint_platform::SelectorV5Platform;
-use slint::{platform::software_renderer::MinimalSoftwareWindow, Rgb8Pixel};
-use vexide::{
-    core::{
-        competition::CompetitionSystem,
-        sync::{Barrier, Condvar, Mutex},
-    },
-    prelude::*,
-};
+use slint::VecModel;
+use vexide::{core::time::Instant, prelude::*};
 
 slint::include_modules!();
 
 #[async_trait]
 pub trait AutonRoutine<CompeteT>: 'static {
+    type Return;
+
     fn name(&self) -> &'static str;
     fn description(&self) -> &'static str;
-    async fn run(&self, context: &mut CompeteT) -> Result<(), Box<dyn Error>>;
+    async fn run(&self, context: &mut CompeteT) -> Self::Return;
 }
 
 /// A set of tasks to run when the competition is in a particular mode.
 #[allow(async_fn_in_trait, clippy::unused_async)]
-pub trait CompeteWithSelector<Category>: Sized
-where
-    Category: Display + Debug + Clone,
-{
+pub trait CompeteWithSelector: Sized {
+    type Category: Display + Debug + Clone;
+    type Return;
+
     /// Runs when the competition system is connected.
     ///
     /// See [`Compete::connected`] for more information.
@@ -53,129 +51,164 @@ where
     async fn disconnected(&mut self) {}
 
     /// Returns a map of autonomous routines to run.
-    fn autonomous_routes(&self) -> BTreeMap<Category, impl AsRef<[&dyn AutonRoutine<Self>]>>;
+    ///
+    /// This map must not change over the lifetime of the program.
+    fn autonomous_routes<'a, 'b>(
+        &'b self,
+    ) -> BTreeMap<Self::Category, impl AsRef<[&'a dyn AutonRoutine<Self, Return = Self::Return>]>>
+    where
+        Self: 'a;
 
     /// Runs when the robot is put into driver control mode.
     ///
     /// See [`Compete::driver`] for more information.
     async fn driver(&mut self);
+
+    fn calibrate_gyro(&mut self) {}
+
+    fn is_gyro_calibrating(&self) -> bool {
+        false
+    }
+
+    fn diagnostics(&self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+
+    fn autonomous_route_finished(&mut self, _return_value: Self::Return) {}
 }
 
-static STOP_UI_FLAG: (Mutex<bool>, Condvar) = (Mutex::new(true), Condvar::new());
-
-struct SharedData<'a, T> {
-    selected_category: usize,
-    selected_route: usize,
+struct SharedData<'a, T, R> {
+    selected_route: Option<&'a dyn AutonRoutine<T, Return = R>>,
+    user: T,
+    platform: SelectorV5Platform,
 }
 
 /// Extension methods for [`Compete`].
 /// Automatically implemented for any type implementing [`Compete`].
 #[allow(clippy::type_complexity)]
-pub trait CompeteWithSelectorExt<Category>: CompeteWithSelector<Category>
+pub trait CompeteWithSelectorExt: CompeteWithSelector
 where
     Self: 'static,
-    Category: Display + Debug + Clone + 'static,
 {
     #[allow(async_fn_in_trait)]
     async fn compete_with_selector(self, display: vexide::devices::display::Display) -> ! {
-        let window = MainWindow::new().expect("failed to initialize window");
-        let weak = window.as_weak();
-
-        let shared_data = Rc::new(Mutex::new(SharedData {
-            selected_category: 0,
-            selected_route: 0,
-        }));
-
-        #[allow(clippy::unit_arg)]
-        let runtime = CompetitionRuntime::builder((self, shared_data.clone()))
-            .on_connect(|s| {
-                Box::pin(async { ControlFlow::<!>::Continue(s.0.user.connected().await) })
-            })
-            .on_disconnect(|s| {
-                Box::pin(async { ControlFlow::<!>::Continue(s.user.disconnected().await) })
-            })
-            .while_disabled(|_| {
-                Box::pin(async {
-                    // Tell the UI task to start rendering/checking for events.
-                    // Reenable the screen.
-                    let mut lock = STOP_UI_FLAG.0.lock().await;
-                    *lock = true;
-                    STOP_UI_FLAG.1.notify_one();
-                    ControlFlow::<!>::Continue(())
-                })
-            })
-            .while_autonomous(|s| {
-                Box::pin(async {
-                    // Tell the UI task to stop rendering/checking for events.
-                    // Only do this if the competition system is connected.
-                    if vexide::core::competition::is_connected() {
-                        let mut lock = STOP_UI_FLAG.0.lock().await;
-                        *lock = false;
-                        STOP_UI_FLAG.1.notify_one();
-                    }
-                    // TODO: Run the autonomous routine
-                    let route = s
-                        .selected_route
-                        .lock()
-                        .await
-                        .expect("couldn't lock selected route");
-                    route.run(&mut s.user);
-
-                    ControlFlow::<!>::Continue(())
-                })
-            })
-            .while_driving(|s| {
-                Box::pin(async {
-                    // Tell the UI task to stop rendering/checking for events.
-                    // Only do this if the competition system is connected.
-                    if vexide::core::competition::is_connected() {
-                        let mut lock = STOP_UI_FLAG.0.lock().await;
-                        *lock = false;
-                        STOP_UI_FLAG.1.notify_one();
-                    }
-                    ControlFlow::<!>::Continue(s.user.driver().await)
-                })
-            })
-            .finish();
-
         let platform = platform::slint_platform::SelectorV5Platform::new(display);
         slint::platform::set_platform(Box::new(platform.clone()))
             .expect("couldn't set slint platform");
 
-        let selected_route_2 = selected_route.clone();
-        window.on_picked(move |category_id, route_id| {
-            *selected_route_2.try_lock().unwrap() = Some(
-                autonomous_routes
-                    .iter()
-                    .skip(category_id as usize)
-                    .next()
-                    .unwrap()
-                    .1
-                    .as_ref()[route_id as usize],
-            );
-        });
-
-        spawn(async move {
-            window.show().expect("failed to run window");
-            loop {
-                if let Some(lock) = STOP_UI_FLAG.0.try_lock() {
-                    if !*lock {
-                        let _ = STOP_UI_FLAG.1.wait(lock).await;
-                    }
-                }
-                platform.check_events();
-                sleep(Duration::from_millis(1000 / 30)).await;
-            }
+        #[allow(clippy::unit_arg)]
+        let runtime = CompetitionRuntime::builder(SharedData {
+            selected_route: None,
+            user: self,
+            platform,
         })
-        .detach();
+        .on_connect(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.connected().await) }))
+        .on_disconnect(|s| {
+            Box::pin(async { ControlFlow::<!>::Continue(s.user.disconnected().await) })
+        })
+        .while_disabled(|s| {
+            Box::pin(async {
+                let window = MainWindow::new().expect("failed to initialize window");
+
+                let mut last_diagnostics_refresh = Instant::now();
+
+                window.set_categories(VecModel::from_slice(
+                    &s.user
+                        .autonomous_routes()
+                        .iter()
+                        .map(|x| Category {
+                            name: x.0.to_string().into(),
+                            routes: VecModel::from_slice(
+                                &x.1.as_ref()
+                                    .iter()
+                                    .map(|y| Route {
+                                        name: y.name().to_string().into(),
+                                        description: y.description().to_string().into(),
+                                    })
+                                    .collect::<Vec<_>>(),
+                            ),
+                        })
+                        .collect::<Vec<_>>(),
+                ));
+
+                let build_diagnostics = |diagnostics: Vec<(String, String)>| {
+                    VecModel::from_slice(
+                        &diagnostics
+                            .iter()
+                            .map(|(k, v)| {
+                                VecModel::from_slice(&[
+                                    slint::SharedString::from(k.to_string()).into(),
+                                    slint::SharedString::from(v.to_string()).into(),
+                                ])
+                            })
+                            .collect::<Vec<_>>(),
+                    )
+                };
+                window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+
+                let mut current_category_id = -1;
+                let mut current_route_id = -1;
+                loop {
+                    s.platform.check_events();
+
+                    // Handle the window state
+                    let category_id = window.get_picked_category_id();
+                    let route_id = window.get_picked_route_id();
+                    if category_id >= 0
+                        && route_id >= 0
+                        && (category_id != current_category_id || route_id != current_route_id)
+                    {
+                        let selected_route = *s
+                            .user
+                            .autonomous_routes()
+                            .iter()
+                            .nth(category_id as usize)
+                            .expect("nonexistent category")
+                            .1
+                            .as_ref()
+                            .get(route_id as usize)
+                            .expect("nonexistent route");
+                        s.selected_route = Some(selected_route);
+                        current_category_id = category_id;
+                        current_route_id = route_id;
+                    }
+
+                    window.set_gyro_calibrating(s.user.is_gyro_calibrating());
+
+                    if window.get_refresh_diagnostics_requested() {
+                        window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+                        window.set_refresh_diagnostics_requested(false);
+                    }
+
+                    if window.get_gyro_calibration_requested() {
+                        s.user.calibrate_gyro();
+                        window.set_gyro_calibration_requested(false);
+                    }
+
+                    if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
+                        window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+                        last_diagnostics_refresh = Instant::now();
+                    }
+
+                    sleep(Duration::from_millis(1000 / 30)).await;
+                }
+            })
+        })
+        .while_autonomous(|s| {
+            Box::pin(async {
+                // TODO: Run the autonomous routine
+                let route = s.selected_route.expect("no selected route!");
+                let route_rt = route.run(&mut s.user).await;
+                s.user.autonomous_route_finished(route_rt);
+
+                ControlFlow::<!>::Continue(())
+            })
+        })
+        .while_driving(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.driver().await) }))
+        .finish();
 
         runtime.await;
     }
 }
 
-impl<R, Category> CompeteWithSelectorExt<Category> for R
-where
-    R: CompeteWithSelector<Category> + 'static,
-    Category: Display + Debug + Clone,
-{
-}
+impl<R> CompeteWithSelectorExt for R where R: CompeteWithSelector + 'static {}

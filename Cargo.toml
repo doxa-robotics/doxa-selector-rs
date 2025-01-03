@@ -22,4 +22,4 @@ slint = { version = "1.9.1", default-features = false, features = [
 async-trait = "0.1.83"
 
 [build-dependencies]
-slint-build = "1.8.0"
+slint-build = "1.9.1"

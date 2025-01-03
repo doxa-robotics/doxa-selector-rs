@@ -1,7 +1,8 @@
 import { Palette, ScrollView } from "std-widgets.slint";
+import { Route } from "CategoryPicker.slint";
 
 component RouteCard {
-    in property <string> route;
+    in property <Route> route: { name: "test", description: "testing" };
     in property <int> i;
 
     callback clicked();
@@ -15,9 +16,19 @@ component RouteCard {
             }
             border-radius: 12px;
 
-            Text {
-                text: route;
-                font-size: 24px;
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: route.name;
+                    font-size: 24px;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: route.description;
+                    font-size: 12px;
+                    horizontal-alignment: center;
+                }
             }
         }
 
@@ -34,7 +45,7 @@ component RouteCard {
 }
 
 export component RoutePicker {
-    in property <[string]> routes;
+    in property <[Route]> routes;
 
     property <length> scrollable-width: 452px;
     property <length> tile-height: 62px;

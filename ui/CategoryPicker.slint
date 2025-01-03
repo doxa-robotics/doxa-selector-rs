@@ -1,8 +1,12 @@
 import { Palette, ScrollView } from "std-widgets.slint";
 
+export struct Route {
+    name: string,
+    description: string}
+
 export struct Category {
     name: string,
-    routes: [string]
+    routes: [Route]
 }
 
 component CategoryCard {

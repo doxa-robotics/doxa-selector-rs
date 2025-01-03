@@ -1,12 +1,15 @@
 import { GroupBox, VerticalBox, StandardTableView, Button, ScrollView, Palette, HorizontalBox } from "std-widgets.slint";
+import { BrainDimensions } from "MainPicker.slint";
 export component DiagnosticsPopup {
     in property <[[StandardListViewItem]]> diagnostics;
-    callback refresh();
+    callback calibrate();
     callback done();
 
     Rectangle {
+        // Hardcoded width and height from the size of the V5 brain
+        width: BrainDimensions.width;
+        height: BrainDimensions.height;
         background: Palette.background;
-        vertical-stretch: 1;
 
         Image {
             x: parent.width - self.width;
@@ -27,9 +30,9 @@ export component DiagnosticsPopup {
                 }
 
                 Button {
-                    text: "Refresh";
+                    text: "Calibrate gyro";
                     clicked => {
-                        refresh()
+                        calibrate()
                     }
                 }
 

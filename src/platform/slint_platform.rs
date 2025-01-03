@@ -1,17 +1,14 @@
-use alloc::{boxed::Box, rc::Rc};
-use core::{cell::RefCell, time::Duration};
+use alloc::rc::Rc;
+use core::cell::RefCell;
 
 use slint::{
     platform::{
         software_renderer::{MinimalSoftwareWindow, RepaintBufferType},
-        Platform, PointerEventButton, WindowEvent,
+        Platform,
     },
-    LogicalPosition, PhysicalPosition, PhysicalSize, Rgb8Pixel,
+    PhysicalSize, Rgb8Pixel,
 };
-use vexide::{
-    core::time::Instant,
-    devices::display::{Display, Rect},
-};
+use vexide::{core::time::Instant, devices::display::Display};
 
 #[derive(Clone)]
 pub struct SelectorV5Platform {

@@ -7,70 +7,59 @@ import { MainPicker, BrainDimensions } from "MainPicker.slint";
 import { RoutineSelectedCard } from "RoutineSelectedCard.slint";
 
 export component MainWindow inherits Window {
-    in property <[Category]> categories: [
-        { name: "Left", routes: ["Left 1", "Left 2", "Left 3"] },
-        { name: "Center", routes: ["Center 1"] },
-        { name: "Right", routes: ["Right 1"] },
-        { name: "Skills", routes: ["Skills"] }
-    ];
+    in property <[Category]> categories;
     in property <bool> gyro-calibrating: false;
-    in property <[[StandardListViewItem]]> diagnostics: [
-        [{ text: "Max motor temperature" }, { text: "120 C" }],
-        [{ text: "Motor faults" }, { text: "Over temperature, over current" }],
-        [{ text: "Gyro orientation" }, { text: "3 degrees" }],
-        [{ text: "Gyro orientation" }, { text: "3 degrees" }],
-    ];
+    in property <[[StandardListViewItem]]> diagnostics;
 
-    callback picked(category-id: int, route-id: int);
-    callback refresh-diagnostics();
-    callback calibrate-gyro();
+    in-out property <bool> gyro-calibration-requested: false;
+    in-out property <bool> refresh-diagnostics-requested: false;
 
-    property <int> picked-category-id: -1;
-    property <int> picked-route-id: -1;
-    property <bool> diagnostics-open: false;
+    out property <int> picked-category-id: -1;
+    out property <int> picked-route-id: -1;
     out property <bool> finished: false;
+    out property <bool> diagnostics-open: false;
 
     background: transparent;
 
-    VerticalLayout {
-        // Hardcoded width and height from the size of the V5 brain
-        width: BrainDimensions.width;
-        height: BrainDimensions.height;
-        if diagnostics-open: DiagnosticsPopup {
+    if diagnostics-open: VerticalLayout {
+        DiagnosticsPopup {
             diagnostics: diagnostics;
 
-            refresh => {
-                refresh-diagnostics();
+            calibrate => {
+                gyro-calibration-requested = true;
             }
             done => {
                 diagnostics-open = false;
             }
         }
-        if !diagnostics-open: VerticalLayout {
-            if finished: Image {
-                source: @image-url("../examples/background.png");
-            }
-            if !finished: VerticalLayout {
-                if picked-route-id < 0: MainPicker {
-                    categories: categories;
+    }
+    if !diagnostics-open: VerticalLayout {
+        // Hardcoded width and height from the size of the V5 brain
+        width: BrainDimensions.width;
+        height: BrainDimensions.height;
 
-                    picked(category-id, route-id) => {
-                        picked-category-id = category-id;
-                        picked-route-id = route-id;
-                        picked(picked-category-id, picked-route-id);
-                    }
+        if finished: Image {
+            source: @image-url("./assets/background.png");
+        }
+        if !finished: VerticalLayout {
+            if picked-route-id < 0: MainPicker {
+                categories: categories;
+
+                picked(category-id, route-id) => {
+                    picked-category-id = category-id;
+                    picked-route-id = route-id;
                 }
-                if picked-route-id >= 0: RoutineSelectedCard {
-                    category-name: categories[picked-category-id].name;
-                    route-name: categories[picked-category-id].routes[picked-route-id];
+            }
+            if picked-route-id >= 0: RoutineSelectedCard {
+                category-name: categories[picked-category-id].name;
+                route-name: categories[picked-category-id].routes[picked-route-id].name;
 
-                    edit => {
-                        picked-category-id = -1;
-                        picked-route-id = -1;
-                    }
-                    done => {
-                        finished = true;
-                    }
+                edit => {
+                    picked-category-id = -1;
+                    picked-route-id = -1;
+                }
+                done => {
+                    finished = true;
                 }
             }
         }
@@ -88,7 +77,6 @@ export component MainWindow inherits Window {
                 padding-top: 2px;
                 padding-bottom: 2px;
                 spacing: 4px;
-
                 Text {
                     text: "DOXA Robotics 99484A";
                     color: Palette.accent-foreground;
@@ -98,13 +86,16 @@ export component MainWindow inherits Window {
 
                 Button {
                     text: gyro-calibrating ? "Calibrating..." : "Calibrate gyro";
+                    clicked => {
+                        gyro-calibration-requested = true;
+                    }
                 }
 
                 Button {
                     text: "Diagnostics";
-
                     clicked => {
                         diagnostics-open = true;
+                        refresh-diagnostics-requested = true;
                     }
                 }
             }
