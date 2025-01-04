@@ -196,10 +196,10 @@ where
         })
         .while_autonomous(|s| {
             Box::pin(async {
-                // TODO: Run the autonomous routine
-                let route = s.selected_route.expect("no selected route!");
-                let route_rt = route.run(&mut s.user).await;
-                s.user.autonomous_route_finished(route_rt);
+                if let Some(route) = s.selected_route {
+                    let route_rt = route.run(&mut s.user).await;
+                    s.user.autonomous_route_finished(route_rt);
+                }
 
                 ControlFlow::<!>::Continue(())
             })
