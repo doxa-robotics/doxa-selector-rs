@@ -21,7 +21,8 @@ use core::{
 use async_trait::async_trait;
 use platform::slint_platform::SelectorV5Platform;
 use slint::VecModel;
-use vexide::{core::time::Instant, prelude::*};
+use vexide_core::{competition::CompetitionRuntime, time::Instant};
+use vexide_devices::display::Display as VexideDisplay;
 
 slint::include_modules!();
 
@@ -91,7 +92,7 @@ where
     Self: 'static,
 {
     #[allow(async_fn_in_trait)]
-    async fn compete_with_selector(self, display: vexide::devices::display::Display) -> ! {
+    async fn compete_with_selector(self, display: VexideDisplay) -> ! {
         let platform = platform::slint_platform::SelectorV5Platform::new(display);
         slint::platform::set_platform(Box::new(platform.clone()))
             .expect("couldn't set slint platform");
@@ -190,7 +191,7 @@ where
                         last_diagnostics_refresh = Instant::now();
                     }
 
-                    sleep(Duration::from_millis(1000 / 30)).await;
+                    vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
                 }
             })
         })

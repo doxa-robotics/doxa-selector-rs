@@ -8,7 +8,7 @@ use slint::{
     platform::{software_renderer::SoftwareRenderer, PointerEventButton, WindowEvent},
     LogicalPosition, PhysicalPosition, Rgb8Pixel,
 };
-use vexide::devices::display::{Display, Rect, TouchEvent, TouchState};
+use vexide_devices::display::{Display, Rect, TouchEvent, TouchState};
 
 pub fn convert_touch_event(event: &TouchEvent, display_pressed: &RefCell<bool>) -> WindowEvent {
     let physical_pos = PhysicalPosition::new(event.x.into(), event.y.into());

@@ -8,7 +8,8 @@ use slint::{
     },
     PhysicalSize, Rgb8Pixel,
 };
-use vexide::{core::time::Instant, devices::display::Display};
+use vexide_core::time::Instant;
+use vexide_devices::display::Display;
 
 #[derive(Clone)]
 pub struct SelectorV5Platform {
