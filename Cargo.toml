@@ -1,5 +1,5 @@
 [package]
-name = "doxa-selector-rs"
+name = "doxa-selector"
 version = "0.1.0"
 edition = "2021"
 
