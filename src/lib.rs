@@ -4,26 +4,30 @@
 
 extern crate alloc;
 
+#[cfg(feature = "ui")]
 mod platform;
 
-use alloc::{
-    boxed::Box,
-    collections::btree_map::BTreeMap,
-    string::{String, ToString},
-    vec::Vec,
-};
+#[cfg(feature = "ui")]
+use alloc::string::ToString;
+use alloc::{boxed::Box, collections::btree_map::BTreeMap, string::String, vec::Vec};
+#[cfg(feature = "ui")]
+use core::time::Duration;
 use core::{
     fmt::{Debug, Display},
     ops::ControlFlow,
-    time::Duration,
 };
 
 use async_trait::async_trait;
+#[cfg(feature = "ui")]
 use platform::slint_platform::SelectorV5Platform;
+#[cfg(feature = "ui")]
 use slint::VecModel;
-use vexide_core::{competition::CompetitionRuntime, time::Instant};
+use vexide_core::competition::CompetitionRuntime;
+#[cfg(feature = "ui")]
+use vexide_core::time::Instant;
 use vexide_devices::display::Display as VexideDisplay;
 
+#[cfg(feature = "ui")]
 slint::include_modules!();
 
 #[async_trait]
@@ -80,7 +84,9 @@ pub trait CompeteWithSelector: Sized {
 
 struct SharedData<'a, T, R> {
     selected_route: Option<&'a dyn AutonRoutine<T, Return = R>>,
+    default_route: Option<&'a dyn AutonRoutine<T, Return = R>>,
     user: T,
+    #[cfg(feature = "ui")]
     platform: SelectorV5Platform,
 }
 
@@ -92,16 +98,27 @@ where
     Self: 'static,
 {
     #[allow(async_fn_in_trait)]
-    async fn compete_with_selector(self, display: VexideDisplay) -> ! {
-        let platform = platform::slint_platform::SelectorV5Platform::new(display);
-        slint::platform::set_platform(Box::new(platform.clone()))
-            .expect("couldn't set slint platform");
+    #[cfg_attr(not(feature = "ui"), allow(unused_variables))]
+    async fn compete_with_selector(
+        self,
+        display: VexideDisplay,
+        default_route: Option<&'static dyn AutonRoutine<Self, Return = Self::Return>>,
+    ) -> ! {
+        #[cfg(feature = "ui")]
+        let platform = {
+            let p = platform::slint_platform::SelectorV5Platform::new(display);
+            slint::platform::set_platform(Box::new(p.clone()))
+                .expect("couldn't set slint platform");
+            p
+        };
 
         #[allow(clippy::unit_arg)]
         let runtime = CompetitionRuntime::builder(SharedData {
             selected_route: None,
             user: self,
+            #[cfg(feature = "ui")]
             platform,
+            default_route,
         })
         .on_connect(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.connected().await) }))
         .on_disconnect(|s| {
@@ -109,95 +126,105 @@ where
         })
         .while_disabled(|s| {
             Box::pin(async {
-                let window = MainWindow::new().expect("failed to initialize window");
+                #[cfg(feature = "ui")]
+                {
+                    let window = MainWindow::new().expect("failed to initialize window");
 
-                let mut last_diagnostics_refresh = Instant::now();
+                    let mut last_diagnostics_refresh = Instant::now();
 
-                window.set_categories(VecModel::from_slice(
-                    &s.user
-                        .autonomous_routes()
-                        .iter()
-                        .map(|x| Category {
-                            name: x.0.to_string().into(),
-                            routes: VecModel::from_slice(
-                                &x.1.as_ref()
-                                    .iter()
-                                    .map(|y| Route {
-                                        name: y.name().to_string().into(),
-                                        description: y.description().to_string().into(),
-                                    })
-                                    .collect::<Vec<_>>(),
-                            ),
-                        })
-                        .collect::<Vec<_>>(),
-                ));
-
-                let build_diagnostics = |diagnostics: Vec<(String, String)>| {
-                    VecModel::from_slice(
-                        &diagnostics
-                            .iter()
-                            .map(|(k, v)| {
-                                VecModel::from_slice(&[
-                                    slint::SharedString::from(k.to_string()).into(),
-                                    slint::SharedString::from(v.to_string()).into(),
-                                ])
-                            })
-                            .collect::<Vec<_>>(),
-                    )
-                };
-                window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-
-                let mut current_category_id = -1;
-                let mut current_route_id = -1;
-                loop {
-                    s.platform.check_events();
-
-                    // Handle the window state
-                    let category_id = window.get_picked_category_id();
-                    let route_id = window.get_picked_route_id();
-                    if category_id >= 0
-                        && route_id >= 0
-                        && (category_id != current_category_id || route_id != current_route_id)
-                    {
-                        let selected_route = *s
-                            .user
+                    window.set_categories(VecModel::from_slice(
+                        &s.user
                             .autonomous_routes()
                             .iter()
-                            .nth(category_id as usize)
-                            .expect("nonexistent category")
-                            .1
-                            .as_ref()
-                            .get(route_id as usize)
-                            .expect("nonexistent route");
-                        s.selected_route = Some(selected_route);
-                        current_category_id = category_id;
-                        current_route_id = route_id;
+                            .map(|x| Category {
+                                name: x.0.to_string().into(),
+                                routes: VecModel::from_slice(
+                                    &x.1.as_ref()
+                                        .iter()
+                                        .map(|y| Route {
+                                            name: y.name().to_string().into(),
+                                            description: y.description().to_string().into(),
+                                        })
+                                        .collect::<Vec<_>>(),
+                                ),
+                            })
+                            .collect::<Vec<_>>(),
+                    ));
+
+                    let build_diagnostics = |diagnostics: Vec<(String, String)>| {
+                        VecModel::from_slice(
+                            &diagnostics
+                                .iter()
+                                .map(|(k, v)| {
+                                    VecModel::from_slice(&[
+                                        slint::SharedString::from(k.to_string()).into(),
+                                        slint::SharedString::from(v.to_string()).into(),
+                                    ])
+                                })
+                                .collect::<Vec<_>>(),
+                        )
+                    };
+                    window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+
+                    let mut current_category_id = -1;
+                    let mut current_route_id = -1;
+                    loop {
+                        s.platform.check_events();
+
+                        // Handle the window state
+                        let category_id = window.get_picked_category_id();
+                        let route_id = window.get_picked_route_id();
+                        if category_id >= 0
+                            && route_id >= 0
+                            && (category_id != current_category_id || route_id != current_route_id)
+                        {
+                            let selected_route = *s
+                                .user
+                                .autonomous_routes()
+                                .iter()
+                                .nth(category_id as usize)
+                                .expect("nonexistent category")
+                                .1
+                                .as_ref()
+                                .get(route_id as usize)
+                                .expect("nonexistent route");
+                            s.selected_route = Some(selected_route);
+                            current_category_id = category_id;
+                            current_route_id = route_id;
+                        }
+
+                        window.set_gyro_calibrating(s.user.is_gyro_calibrating());
+
+                        if window.get_refresh_diagnostics_requested() {
+                            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+                            window.set_refresh_diagnostics_requested(false);
+                        }
+
+                        if window.get_gyro_calibration_requested() {
+                            s.user.calibrate_gyro();
+                            window.set_gyro_calibration_requested(false);
+                        }
+
+                        if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
+                            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+                            last_diagnostics_refresh = Instant::now();
+                        }
+
+                        vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
                     }
-
-                    window.set_gyro_calibrating(s.user.is_gyro_calibrating());
-
-                    if window.get_refresh_diagnostics_requested() {
-                        window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-                        window.set_refresh_diagnostics_requested(false);
-                    }
-
-                    if window.get_gyro_calibration_requested() {
-                        s.user.calibrate_gyro();
-                        window.set_gyro_calibration_requested(false);
-                    }
-
-                    if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
-                        window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-                        last_diagnostics_refresh = Instant::now();
-                    }
-
-                    vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
+                }
+                #[cfg(not(feature = "ui"))]
+                {
+                    ControlFlow::<!>::Continue(())
                 }
             })
         })
         .while_autonomous(|s| {
             Box::pin(async {
                 if let Some(route) = s.selected_route {
+                    let route_rt = route.run(&mut s.user).await;
+                    s.user.autonomous_route_finished(route_rt);
+                } else if let Some(route) = s.default_route {
                     let route_rt = route.run(&mut s.user).await;
                     s.user.autonomous_route_finished(route_rt);
                 }
@@ -207,6 +234,9 @@ where
         })
         .while_driving(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.driver().await) }))
         .finish();
+
+        // TODO: If we haven't connected to the competition system yet, we should run the UI in a Future until we are.
+        // This will allow us to show the UI while waiting for the competition system to connect.
 
         runtime.await;
     }
