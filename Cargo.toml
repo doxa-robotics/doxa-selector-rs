@@ -28,4 +28,4 @@ slint-build = "1.9.1"
 
 [features]
 default = ["ui"]
-ui = []
+ui = ["dep:slint"]
