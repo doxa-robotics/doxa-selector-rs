@@ -128,90 +128,7 @@ where
             Box::pin(async {
                 #[cfg(feature = "ui")]
                 {
-                    let window = MainWindow::new().expect("failed to initialize window");
-
-                    let mut last_diagnostics_refresh = Instant::now();
-
-                    window.set_categories(VecModel::from_slice(
-                        &s.user
-                            .autonomous_routes()
-                            .iter()
-                            .map(|x| Category {
-                                name: x.0.to_string().into(),
-                                routes: VecModel::from_slice(
-                                    &x.1.as_ref()
-                                        .iter()
-                                        .map(|y| Route {
-                                            name: y.name().to_string().into(),
-                                            description: y.description().to_string().into(),
-                                        })
-                                        .collect::<Vec<_>>(),
-                                ),
-                            })
-                            .collect::<Vec<_>>(),
-                    ));
-
-                    let build_diagnostics = |diagnostics: Vec<(String, String)>| {
-                        VecModel::from_slice(
-                            &diagnostics
-                                .iter()
-                                .map(|(k, v)| {
-                                    VecModel::from_slice(&[
-                                        slint::SharedString::from(k.to_string()).into(),
-                                        slint::SharedString::from(v.to_string()).into(),
-                                    ])
-                                })
-                                .collect::<Vec<_>>(),
-                        )
-                    };
-                    window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-
-                    let mut current_category_id = -1;
-                    let mut current_route_id = -1;
-                    loop {
-                        s.platform.check_events();
-
-                        // Handle the window state
-                        let category_id = window.get_picked_category_id();
-                        let route_id = window.get_picked_route_id();
-                        if category_id >= 0
-                            && route_id >= 0
-                            && (category_id != current_category_id || route_id != current_route_id)
-                        {
-                            let selected_route = *s
-                                .user
-                                .autonomous_routes()
-                                .iter()
-                                .nth(category_id as usize)
-                                .expect("nonexistent category")
-                                .1
-                                .as_ref()
-                                .get(route_id as usize)
-                                .expect("nonexistent route");
-                            s.selected_route = Some(selected_route);
-                            current_category_id = category_id;
-                            current_route_id = route_id;
-                        }
-
-                        window.set_gyro_calibrating(s.user.is_gyro_calibrating());
-
-                        if window.get_refresh_diagnostics_requested() {
-                            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-                            window.set_refresh_diagnostics_requested(false);
-                        }
-
-                        if window.get_gyro_calibration_requested() {
-                            s.user.calibrate_gyro();
-                            window.set_gyro_calibration_requested(false);
-                        }
-
-                        if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
-                            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-                            last_diagnostics_refresh = Instant::now();
-                        }
-
-                        vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
-                    }
+                    run_window_event_loop(s, false).await
                 }
                 #[cfg(not(feature = "ui"))]
                 {
@@ -232,7 +149,17 @@ where
                 ControlFlow::<!>::Continue(())
             })
         })
-        .while_driving(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.driver().await) }))
+        .while_driving(|s| {
+            Box::pin(async {
+                #[cfg(feature = "ui")]
+                if !vexide_core::competition::is_connected() {
+                    // If we're not connected to the competition system, run the UI.
+                    // The driver will not be able to control the robot until we are connected!
+                    run_window_event_loop(s, true).await;
+                }
+                ControlFlow::<!>::Continue(s.user.driver().await)
+            })
+        })
         .finish();
 
         // TODO: If we haven't connected to the competition system yet, we should run the UI in a Future until we are.
@@ -243,3 +170,101 @@ where
 }
 
 impl<R> CompeteWithSelectorExt for R where R: CompeteWithSelector + 'static {}
+
+#[cfg(feature = "ui")]
+async fn run_window_event_loop<T, R: 'static>(
+    s: &mut SharedData<'_, T, R>,
+    is_driver: bool,
+) -> ControlFlow<!>
+where
+    T: CompeteWithSelector<Return = R> + 'static,
+{
+    let window = MainWindow::new().expect("failed to initialize window");
+
+    let mut last_diagnostics_refresh = Instant::now();
+
+    window.set_categories(VecModel::from_slice(
+        &s.user
+            .autonomous_routes()
+            .iter()
+            .map(|x| Category {
+                name: x.0.to_string().into(),
+                routes: VecModel::from_slice(
+                    &x.1.as_ref()
+                        .iter()
+                        .map(|y| Route {
+                            name: y.name().to_string().into(),
+                            description: y.description().to_string().into(),
+                        })
+                        .collect::<Vec<_>>(),
+                ),
+            })
+            .collect::<Vec<_>>(),
+    ));
+
+    let build_diagnostics = |diagnostics: Vec<(String, String)>| {
+        VecModel::from_slice(
+            &diagnostics
+                .iter()
+                .map(|(k, v)| {
+                    VecModel::from_slice(&[
+                        slint::SharedString::from(k.to_string()).into(),
+                        slint::SharedString::from(v.to_string()).into(),
+                    ])
+                })
+                .collect::<Vec<_>>(),
+        )
+    };
+    window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+
+    let mut current_category_id = -1;
+    let mut current_route_id = -1;
+    loop {
+        s.platform.check_events();
+
+        // Handle the window state
+        let category_id = window.get_picked_category_id();
+        let route_id = window.get_picked_route_id();
+        if category_id >= 0
+            && route_id >= 0
+            && (category_id != current_category_id || route_id != current_route_id)
+        {
+            let selected_route = *s
+                .user
+                .autonomous_routes()
+                .iter()
+                .nth(category_id as usize)
+                .expect("nonexistent category")
+                .1
+                .as_ref()
+                .get(route_id as usize)
+                .expect("nonexistent route");
+            s.selected_route = Some(selected_route);
+            current_category_id = category_id;
+            current_route_id = route_id;
+        }
+
+        window.set_gyro_calibrating(s.user.is_gyro_calibrating());
+
+        if window.get_refresh_diagnostics_requested() {
+            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+            window.set_refresh_diagnostics_requested(false);
+        }
+
+        if window.get_gyro_calibration_requested() {
+            s.user.calibrate_gyro();
+            window.set_gyro_calibration_requested(false);
+        }
+
+        if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
+            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
+            last_diagnostics_refresh = Instant::now();
+        }
+
+        if is_driver && vexide_core::competition::is_connected() {
+            break ControlFlow::Continue(());
+        }
+
+        vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
+    }
+}
