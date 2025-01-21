@@ -27,5 +27,5 @@ async-trait = "0.1.83"
 slint-build = "1.9.1"
 
 [features]
-default = ["ui"]
+default = []
 ui = ["dep:slint"]
