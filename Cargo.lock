@@ -3311,8 +3311,7 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vex-libunwind"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a93b1794031a6ec542ca31c3c19ee54a1c7ad78bad188577d75452d2f344780"
+source = "git+https://github.com/vexide/vex-libunwind.git#ba3b4b6243fd0962b2d44b71efb30e3b891480c3"
 dependencies = [
  "snafu",
  "vex-libunwind-sys",
@@ -3321,8 +3320,7 @@ dependencies = [
 [[package]]
 name = "vex-libunwind-sys"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1eddc26a00312b0b53ee4df6574e4c09488c89361d3beb6f4cbe75267af32f50"
+source = "git+https://github.com/vexide/vex-libunwind.git#ba3b4b6243fd0962b2d44b71efb30e3b891480c3"
 
 [[package]]
 name = "vex-sdk"
@@ -3333,8 +3331,7 @@ checksum = "be1b586dd8546706564cf20c94bae51c8f9e4891d70360d3fb63d563350df3d1"
 [[package]]
 name = "vexide-async"
 version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4c3df6f61ba36c1769dff3e5cc7186a0a6cf8b7b0ad06058c61ac9b2dd8a542"
+source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
 dependencies = [
  "async-task",
  "vex-sdk",
@@ -3344,9 +3341,8 @@ dependencies = [
 
 [[package]]
 name = "vexide-core"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caf54d83f7cc0ee60177e685e2b1f9f30fcb3dd2fec82e8057a9ef644e33d26d"
+version = "0.5.1"
+source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
 dependencies = [
  "bitflags 2.6.0",
  "futures-core",
@@ -3363,9 +3359,8 @@ dependencies = [
 
 [[package]]
 name = "vexide-devices"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ad876a60d5f7ac06febe299934be119617e9d2b921fb28e86e921489bdf83bc"
+version = "0.5.1"
+source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
 dependencies = [
  "bitflags 2.6.0",
  "mint",
