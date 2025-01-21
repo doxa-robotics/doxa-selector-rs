@@ -12,16 +12,16 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide-devices = { version = "0.5.2" }
-vexide-core = { version = "0.5.2" }
-vexide-async = { version = "0.1.7" }
+vexide-devices = "*"
+vexide-core = "*"
+vexide-async = "*"
 slint = { version = "1.9.1", default-features = false, optional = true, features = [
   "compat-1-2",
   "unsafe-single-threaded",
   "libm",
   "renderer-software",
 ] }
-async-trait = "0.1.83"
+async-trait = "*"
 
 [build-dependencies]
 slint-build = "1.9.1"
