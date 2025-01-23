@@ -4,6 +4,7 @@
 
 extern crate alloc;
 
+mod controller;
 #[cfg(feature = "ui")]
 mod platform;
 
@@ -69,17 +70,31 @@ pub trait CompeteWithSelector: Sized {
     /// See [`Compete::driver`] for more information.
     async fn driver(&mut self);
 
+    /// Calibrates the gyro. Called when the user requests a calibration.
     fn calibrate_gyro(&mut self) {}
 
+    /// Returns whether the gyro is currently calibrating.
     fn is_gyro_calibrating(&self) -> bool {
         false
     }
 
+    /// Returns a list of diagnostics to display in the UI.
     fn diagnostics(&self) -> Vec<(String, String)> {
         Vec::new()
     }
 
+    /// Runs when an autonomous routine is started.
+    fn autonomous_route_started(&mut self, _route: &dyn AutonRoutine<Self, Return = Self::Return>) {
+    }
+
+    /// Runs when an autonomous routine finishes.
     fn autonomous_route_finished(&mut self, _return_value: Self::Return) {}
+
+    /// A reference to the controller, if available. This allows the UI task
+    /// to exit early if a controller interaction is detected.
+    fn controller(&self) -> Option<&vexide_devices::controller::Controller> {
+        None
+    }
 }
 
 struct SharedData<'a, T, R> {
@@ -161,9 +176,6 @@ where
             })
         })
         .finish();
-
-        // TODO: If we haven't connected to the competition system yet, we should run the UI in a Future until we are.
-        // This will allow us to show the UI while waiting for the competition system to connect.
 
         runtime.await;
     }
@@ -261,7 +273,10 @@ where
             last_diagnostics_refresh = Instant::now();
         }
 
-        if is_driver && vexide_core::competition::is_connected() {
+        if is_driver
+            && (vexide_core::competition::is_connected()
+                || s.user.controller().is_some_and(controller::has_interaction))
+        {
             break ControlFlow::Continue(());
         }
 
