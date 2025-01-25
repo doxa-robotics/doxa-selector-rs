@@ -3331,7 +3331,7 @@ checksum = "be1b586dd8546706564cf20c94bae51c8f9e4891d70360d3fb63d563350df3d1"
 [[package]]
 name = "vexide-async"
 version = "0.1.7"
-source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
+source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
 dependencies = [
  "async-task",
  "vex-sdk",
@@ -3342,7 +3342,7 @@ dependencies = [
 [[package]]
 name = "vexide-core"
 version = "0.5.1"
-source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
+source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
 dependencies = [
  "bitflags 2.6.0",
  "futures-core",
@@ -3360,7 +3360,7 @@ dependencies = [
 [[package]]
 name = "vexide-devices"
 version = "0.5.1"
-source = "git+https://github.com/vexide/vexide.git?branch=test%2Fpatch-uploading#418ef9d76695e8f01a409f3e28c0b80208574d15"
+source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
 dependencies = [
  "bitflags 2.6.0",
  "mint",

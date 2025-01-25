@@ -12,9 +12,9 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide-devices = { git = "https://github.com/vexide/vexide.git", branch = "test/patch-uploading" }
-vexide-core = { git = "https://github.com/vexide/vexide.git", branch = "test/patch-uploading" }
-vexide-async = { git = "https://github.com/vexide/vexide.git", branch = "test/patch-uploading" }
+vexide-devices = { git = "https://github.com/vexide/vexide.git", branch = "main" }
+vexide-core = { git = "https://github.com/vexide/vexide.git", branch = "main" }
+vexide-async = { git = "https://github.com/vexide/vexide.git", branch = "main" }
 slint = { version = "1.9.1", default-features = false, optional = true, features = [
   "compat-1-2",
   "unsafe-single-threaded",
