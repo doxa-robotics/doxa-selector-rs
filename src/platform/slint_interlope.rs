@@ -43,15 +43,13 @@ pub fn render_to_display(
 ) {
     renderer.render(buf, Display::HORIZONTAL_RESOLUTION as _);
     // Unwrap because the buffer is guaranteed to be the correct size
-    display
-        .draw_buffer(
-            Rect::from_dimensions(
-                [0, 0],
-                Display::HORIZONTAL_RESOLUTION as _,
-                Display::VERTICAL_RESOLUTION as _,
-            ),
-            *buf,
-            Display::HORIZONTAL_RESOLUTION.into(),
-        )
-        .unwrap();
+    display.draw_buffer(
+        Rect::from_dimensions(
+            [0, 0],
+            Display::HORIZONTAL_RESOLUTION as _,
+            Display::VERTICAL_RESOLUTION as _,
+        ),
+        *buf,
+        Display::HORIZONTAL_RESOLUTION.into(),
+    );
 }
