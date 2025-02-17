@@ -3311,7 +3311,8 @@ checksum = "0b928f33d975fc6ad9f86c8f283853ad26bdd5b10b7f1542aa2fa15e2289105a"
 [[package]]
 name = "vex-libunwind"
 version = "0.1.0"
-source = "git+https://github.com/vexide/vex-libunwind.git#ba3b4b6243fd0962b2d44b71efb30e3b891480c3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a93b1794031a6ec542ca31c3c19ee54a1c7ad78bad188577d75452d2f344780"
 dependencies = [
  "snafu",
  "vex-libunwind-sys",
@@ -3320,7 +3321,8 @@ dependencies = [
 [[package]]
 name = "vex-libunwind-sys"
 version = "0.1.0"
-source = "git+https://github.com/vexide/vex-libunwind.git#ba3b4b6243fd0962b2d44b71efb30e3b891480c3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1eddc26a00312b0b53ee4df6574e4c09488c89361d3beb6f4cbe75267af32f50"
 
 [[package]]
 name = "vex-sdk"
@@ -3330,8 +3332,9 @@ checksum = "be1b586dd8546706564cf20c94bae51c8f9e4891d70360d3fb63d563350df3d1"
 
 [[package]]
 name = "vexide-async"
-version = "0.1.7"
-source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "489711c4dbe267a4fc71cb23a61ef851a68eb56af987a32dd8f88c15c58f7d12"
 dependencies = [
  "async-task",
  "vex-sdk",
@@ -3341,8 +3344,9 @@ dependencies = [
 
 [[package]]
 name = "vexide-core"
-version = "0.5.1"
-source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e924a2cc9cb3a56283f11e1b7c344e02ce4995c6eac18f423ae034e125816fc"
 dependencies = [
  "bitflags 2.6.0",
  "futures-core",
@@ -3359,8 +3363,9 @@ dependencies = [
 
 [[package]]
 name = "vexide-devices"
-version = "0.5.1"
-source = "git+https://github.com/vexide/vexide.git?branch=main#4df7237b117e90cf56f51ff7d940894da9a07f43"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "43c6597ef23f05aa0dead52fe675b68ebf261bbf7b9d30b5424c8eddf81e7992"
 dependencies = [
  "bitflags 2.6.0",
  "mint",
