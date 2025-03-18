@@ -12,9 +12,9 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide-devices = "0.6.0"
-vexide-core = "0.6.0"
-vexide-async = "0.1.8"
+vexide-devices = "0.7.0"
+vexide-core = "0.7.0"
+vexide-async = "0.1.9"
 slint = { version = "1.9.1", default-features = false, optional = true, features = [
   "compat-1-2",
   "unsafe-single-threaded",
