@@ -1,6 +1,6 @@
 [package]
 name = "doxa-selector"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,9 +12,7 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide-devices = "0.7.0"
-vexide-core = "0.7.0"
-vexide-async = "0.1.9"
+vexide = "0.8.0-alpha.2"
 slint = { version = "1.9.1", default-features = false, optional = true, features = [
   "compat-1-2",
   "unsafe-single-threaded",
