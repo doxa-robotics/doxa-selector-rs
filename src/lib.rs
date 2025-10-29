@@ -1,5 +1,3 @@
-#![no_main]
-#![no_std]
 #![feature(never_type)]
 
 extern crate alloc;
@@ -9,16 +7,19 @@ mod controller;
 mod platform;
 
 #[cfg(feature = "ui")]
-use alloc::string::ToString;
-use alloc::{boxed::Box, collections::btree_map::BTreeMap, string::String, vec::Vec};
+use std::string::ToString;
 #[cfg(feature = "ui")]
-use core::time::Duration;
-use core::{
-    fmt::{Debug, Display},
-    ops::ControlFlow,
-};
+use std::time::Duration;
 #[cfg(feature = "ui")]
 use std::time::Instant;
+use std::{
+    boxed::Box,
+    collections::btree_map::BTreeMap,
+    fmt::{Debug, Display},
+    ops::ControlFlow,
+    string::String,
+    vec::Vec,
+};
 
 use async_trait::async_trait;
 #[cfg(feature = "ui")]
@@ -169,7 +170,7 @@ where
                 if !vexide::competition::is_connected() {
                     // If we're not connected to the competition system, run the UI.
                     // The driver will not be able to control the robot until we are connected!
-                    run_window_event_loop(s, true).await;
+                    _ = run_window_event_loop(s, true).await;
                 }
                 ControlFlow::<!>::Continue(s.user.driver().await)
             })

@@ -1,5 +1,4 @@
-use alloc::rc::Rc;
-use core::cell::RefCell;
+use std::{cell::RefCell, rc::Rc, time::Instant};
 
 use slint::{
     platform::{
@@ -8,8 +7,7 @@ use slint::{
     },
     PhysicalSize, Rgb8Pixel,
 };
-use vexide_core::time::Instant;
-use vexide_devices::display::Display;
+use vexide::display::Display;
 
 #[derive(Clone)]
 pub struct SelectorV5Platform {

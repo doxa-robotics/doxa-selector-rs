@@ -2,16 +2,16 @@
 //!
 //! Largely borrowed from https://github.com/vexide/vexide/blob/5231eff4ca8c9c630cba24f676866b2385759aa4/packages/vexide-graphics/src/slint.rs
 
-use core::cell::RefCell;
+use std::cell::RefCell;
 
 use slint::{
     platform::{software_renderer::SoftwareRenderer, PointerEventButton, WindowEvent},
     LogicalPosition, PhysicalPosition, Rgb8Pixel,
 };
-use vexide_devices::display::{Display, Rect, TouchEvent, TouchState};
+use vexide::display::{Display, Rect, TouchEvent, TouchState};
 
 pub fn convert_touch_event(event: &TouchEvent, display_pressed: &RefCell<bool>) -> WindowEvent {
-    let physical_pos = PhysicalPosition::new(event.x.into(), event.y.into());
+    let physical_pos = PhysicalPosition::new(event.point.x.into(), event.point.y.into());
     let position = LogicalPosition::from_physical(physical_pos, 1.0);
     match event.state {
         TouchState::Released => {
@@ -50,6 +50,5 @@ pub fn render_to_display(
             Display::VERTICAL_RESOLUTION as _,
         ),
         *buf,
-        Display::HORIZONTAL_RESOLUTION.into(),
     );
 }
