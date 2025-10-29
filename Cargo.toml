@@ -13,11 +13,9 @@ compress = true
 
 [dependencies]
 vexide = "0.8.0-alpha.2"
-slint = { version = "1.9.1", default-features = false, optional = true, features = [
+slint = { version = "1.14.1", optional = true, features = [
   "compat-1-2",
   "unsafe-single-threaded",
-  "libm",
-  "renderer-software",
 ] }
 async-trait = "*"
 

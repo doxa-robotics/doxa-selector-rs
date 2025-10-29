@@ -1,8 +1,6 @@
 {
-    "rust-analyzer.check.targets": [
-        "${workspaceFolder}/armv7a-vex-v5.json",
-    ],
-    "rust-analyzer.check.allTargets": false,
-    "rust-analyzer.cargo.features": "all",
-    "rust-analyzer.check.command": "clippy",
+  "rust-analyzer.check.allTargets": false,
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.check.command": "clippy",
+  "slint.lspBinaryPath": "/nix/store/2767m8rrbjs2fww2a6vrdvd2dj8inym3-slint-lsp-1.13.1/bin/slint-lsp"
 }
