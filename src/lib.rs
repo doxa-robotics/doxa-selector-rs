@@ -17,16 +17,15 @@ use core::{
     fmt::{Debug, Display},
     ops::ControlFlow,
 };
+#[cfg(feature = "ui")]
+use std::time::Instant;
 
 use async_trait::async_trait;
 #[cfg(feature = "ui")]
 use platform::slint_platform::SelectorV5Platform;
 #[cfg(feature = "ui")]
 use slint::VecModel;
-use vexide_core::competition::CompetitionRuntime;
-#[cfg(feature = "ui")]
-use vexide_core::time::Instant;
-use vexide_devices::display::Display as VexideDisplay;
+use vexide::{competition::CompetitionRuntime, display::Display as VexideDisplay};
 
 #[cfg(feature = "ui")]
 slint::include_modules!();
@@ -92,7 +91,7 @@ pub trait CompeteWithSelector: Sized {
 
     /// A reference to the controller, if available. This allows the UI task
     /// to exit early if a controller interaction is detected.
-    fn controller(&self) -> Option<&vexide_devices::controller::Controller> {
+    fn controller(&self) -> Option<&vexide::controller::Controller> {
         None
     }
 }
@@ -167,7 +166,7 @@ where
         .while_driving(|s| {
             Box::pin(async {
                 #[cfg(feature = "ui")]
-                if !vexide_core::competition::is_connected() {
+                if !vexide::competition::is_connected() {
                     // If we're not connected to the competition system, run the UI.
                     // The driver will not be able to control the robot until we are connected!
                     run_window_event_loop(s, true).await;
@@ -177,7 +176,7 @@ where
         })
         .finish();
 
-        runtime.await;
+        runtime.await
     }
 }
 
@@ -232,6 +231,8 @@ where
     let mut current_category_id = -1;
     let mut current_route_id = -1;
     loop {
+        use vexide::competition;
+
         s.platform.check_events();
 
         // Handle the window state
@@ -274,12 +275,12 @@ where
         }
 
         if is_driver
-            && (vexide_core::competition::is_connected()
+            && (competition::is_connected()
                 || s.user.controller().is_some_and(controller::has_interaction))
         {
             break ControlFlow::Continue(());
         }
 
-        vexide_async::time::sleep(Duration::from_millis(1000 / 30)).await;
+        vexide::time::sleep(Duration::from_millis(1000 / 30)).await;
     }
 }

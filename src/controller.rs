@@ -1,4 +1,4 @@
-use vexide_devices::controller::Controller;
+use vexide::controller::Controller;
 
 pub fn has_interaction(controller: &Controller) -> bool {
     let state = controller.state().unwrap_or_default();
