@@ -14,9 +14,11 @@ compress = true
 [dependencies]
 vexide = "0.8.0-alpha.2"
 # TODO: bump to 1.14.1 when vexide updates its lockfile
-slint = { version = "1.14.1", optional = true, features = [
+slint = { version = "1.14.1", optional = true, default-features = false, features = [
   "compat-1-2",
   "unsafe-single-threaded",
+  "renderer-software",
+  "std",
 ] }
 async-trait = "*"
 
