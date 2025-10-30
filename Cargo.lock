@@ -895,6 +895,7 @@ dependencies = [
  "async-trait",
  "slint",
  "slint-build",
+ "vex-sdk",
  "vexide",
 ]
 

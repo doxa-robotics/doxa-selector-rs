@@ -18,9 +18,9 @@ slint = { version = "1.14.1", optional = true, default-features = false, feature
   "compat-1-2",
   "unsafe-single-threaded",
   "renderer-software",
-  "std",
 ] }
 async-trait = "*"
+vex-sdk = "0.27.1"
 
 [build-dependencies]
 slint-build = "1.14.1"

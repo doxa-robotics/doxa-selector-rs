@@ -8,7 +8,10 @@ use slint::{
     platform::{software_renderer::SoftwareRenderer, PointerEventButton, WindowEvent},
     LogicalPosition, PhysicalPosition, Rgb8Pixel,
 };
-use vexide::display::{Display, Rect, TouchEvent, TouchState};
+use vexide::{
+    color::Rgb,
+    display::{Display, Rect, TouchEvent, TouchState},
+};
 
 pub fn convert_touch_event(event: &TouchEvent, display_pressed: &RefCell<bool>) -> WindowEvent {
     let physical_pos = PhysicalPosition::new(event.point.x.into(), event.point.y.into());
@@ -43,7 +46,8 @@ pub fn render_to_display(
 ) {
     renderer.render(buf, Display::HORIZONTAL_RESOLUTION as _);
     // Unwrap because the buffer is guaranteed to be the correct size
-    display.draw_buffer(
+    draw_buffer(
+        display,
         Rect::from_dimensions(
             [0, 0],
             Display::HORIZONTAL_RESOLUTION as _,
@@ -51,4 +55,57 @@ pub fn render_to_display(
         ),
         *buf,
     );
+}
+pub(crate) trait RgbExt {
+    #[allow(unused)]
+    fn from_raw(raw: u32) -> Self;
+    fn into_raw(self) -> u32;
+}
+
+impl RgbExt for Rgb<u8> {
+    fn from_raw(raw: u32) -> Self {
+        const BITMASK: u32 = 0b1111_1111;
+
+        Self {
+            r: ((raw >> 16) & BITMASK) as _,
+            g: ((raw >> 8) & BITMASK) as _,
+            b: (raw & BITMASK) as _,
+        }
+    }
+
+    fn into_raw(self) -> u32 {
+        (u32::from(self.r) << 16) + (u32::from(self.g) << 8) + u32::from(self.b)
+    }
+}
+
+pub fn draw_buffer<T, I>(display: &mut Display, region: Rect, buf: T)
+where
+    T: IntoIterator<Item = I>,
+    I: Into<Rgb<u8>>,
+{
+    let mut raw_buf = buf
+        .into_iter()
+        .map(|i| i.into().into_raw())
+        .collect::<Vec<_>>();
+    // Convert the coordinates to u32 to avoid overflows when multiplying.
+    let expected_size =
+        ((region.end.y - region.start.y) as u32 * (region.end.x - region.start.x) as u32) as usize;
+
+    let buffer_size = raw_buf.len();
+    assert_eq!(
+            buffer_size, expected_size,
+            "The given buffer of colors was wrong size to fill the specified area: expected {expected_size} bytes, got {buffer_size}."
+        );
+
+    // SAFETY: The buffer is guaranteed to be the correct size.
+    unsafe {
+        vex_sdk::vexDisplayCopyRect(
+            i32::from(region.start.x),
+            i32::from(region.start.y + Display::HEADER_HEIGHT),
+            i32::from(region.end.x),
+            i32::from(region.end.y + Display::HEADER_HEIGHT),
+            raw_buf.as_mut_ptr(),
+            i32::from(region.end.x - region.start.x),
+        );
+    }
 }
