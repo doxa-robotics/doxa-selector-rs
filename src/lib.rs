@@ -2,6 +2,7 @@
 
 extern crate alloc;
 
+#[allow(unused)]
 mod controller;
 #[cfg(feature = "ui")]
 mod platform;

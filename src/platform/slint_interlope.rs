@@ -8,10 +8,7 @@ use slint::{
     platform::{software_renderer::SoftwareRenderer, PointerEventButton, WindowEvent},
     LogicalPosition, PhysicalPosition, Rgb8Pixel,
 };
-use vexide::{
-    color::Rgb,
-    display::{Display, Rect, TouchEvent, TouchState},
-};
+use vexide::display::{Display, Rect, TouchEvent, TouchState};
 
 pub fn convert_touch_event(event: &TouchEvent, display_pressed: &RefCell<bool>) -> WindowEvent {
     let physical_pos = PhysicalPosition::new(event.point.x.into(), event.point.y.into());
@@ -56,13 +53,14 @@ pub fn render_to_display(
         *buf,
     );
 }
+
 pub(crate) trait RgbExt {
     #[allow(unused)]
     fn from_raw(raw: u32) -> Self;
     fn into_raw(self) -> u32;
 }
 
-impl RgbExt for Rgb<u8> {
+impl RgbExt for rgb::Rgb<u8> {
     fn from_raw(raw: u32) -> Self {
         const BITMASK: u32 = 0b1111_1111;
 
@@ -78,18 +76,18 @@ impl RgbExt for Rgb<u8> {
     }
 }
 
-pub fn draw_buffer<T, I>(display: &mut Display, region: Rect, buf: T)
+pub fn draw_buffer<T, I>(_display: &mut Display, region: Rect, buf: T)
 where
     T: IntoIterator<Item = I>,
-    I: Into<Rgb<u8>>,
+    I: Into<rgb::Rgb<u8>>,
 {
     let mut raw_buf = buf
         .into_iter()
         .map(|i| i.into().into_raw())
         .collect::<Vec<_>>();
     // Convert the coordinates to u32 to avoid overflows when multiplying.
-    let expected_size =
-        ((region.end.y - region.start.y) as u32 * (region.end.x - region.start.x) as u32) as usize;
+    let expected_size = ((region.bottom_right.y - region.top_left.y) as u32
+        * (region.bottom_right.x - region.top_left.x) as u32) as usize;
 
     let buffer_size = raw_buf.len();
     assert_eq!(
@@ -100,12 +98,12 @@ where
     // SAFETY: The buffer is guaranteed to be the correct size.
     unsafe {
         vex_sdk::vexDisplayCopyRect(
-            i32::from(region.start.x),
-            i32::from(region.start.y + Display::HEADER_HEIGHT),
-            i32::from(region.end.x),
-            i32::from(region.end.y + Display::HEADER_HEIGHT),
+            i32::from(region.top_left.x),
+            i32::from(region.top_left.y + Display::HEADER_HEIGHT),
+            i32::from(region.bottom_right.x),
+            i32::from(region.bottom_right.y + Display::HEADER_HEIGHT),
             raw_buf.as_mut_ptr(),
-            i32::from(region.end.x - region.start.x),
+            i32::from(region.bottom_right.x - region.top_left.x),
         );
     }
 }

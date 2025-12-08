@@ -1,6 +1,6 @@
 [package]
 name = "doxa-selector"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,13 +12,14 @@ icon = "cool-x"
 compress = true
 
 [dependencies]
-vexide = "0.8.0-alpha.2"
-# TODO: bump to 1.14.1 when vexide updates its lockfile
+vexide = "0.8.0"
 slint = { version = "1.14.1", optional = true, default-features = false, features = [
   "compat-1-2",
   "unsafe-single-threaded",
   "renderer-software",
+  "libm",
 ] }
+rgb = "0.8.50"
 async-trait = "*"
 vex-sdk = "0.27.1"
 
