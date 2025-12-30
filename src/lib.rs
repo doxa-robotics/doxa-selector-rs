@@ -53,6 +53,11 @@
 use std::{cell::RefCell, rc::Rc};
 
 use autons::Selector;
+use buoyant::{
+    color,
+    render_target::{EmbeddedGraphicsRenderTarget, RenderTarget},
+};
+use embedded_graphics::prelude::RgbColor;
 use vexide::{
     display::Display,
     task::{self, Task},
@@ -108,6 +113,10 @@ impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
             categories,
             selection: 0,
         }));
+
+        let mut driver = vexide_embedded_graphics::DisplayDriver::new(display);
+        let mut target = EmbeddedGraphicsRenderTarget::new(&mut driver);
+        target.clear(embedded_graphics::pixelcolor::Rgb888::RED);
 
         Self {
             state: state.clone(),

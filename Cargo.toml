@@ -13,7 +13,11 @@ compress = true
 
 [dependencies]
 vexide = "0.8.0"
+buoyant = { git = "https://github.com/zabackary/buoyant.git", branch = "patch", features = [
+  "embedded-graphics",
+] }
 autons = { version = "0.2.0", default-features = false }
+embedded-graphics = "0.8.1"
 vexide-embedded-graphics = { git = "https://github.com/zabackary/vexide-embedded-graphics.git", branch = "patch/vexide-0.8.0" }
 
 [dev-dependencies]
