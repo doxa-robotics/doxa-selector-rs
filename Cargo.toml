@@ -18,7 +18,10 @@ buoyant = { git = "https://github.com/zabackary/buoyant.git", branch = "patch", 
 ] }
 autons = { version = "0.2.0", default-features = false }
 embedded-graphics = "0.8.1"
+embedded-ttf = "0.2.2"
 vexide-embedded-graphics = { git = "https://github.com/zabackary/vexide-embedded-graphics.git", branch = "patch/vexide-0.8.0" }
+rusttype = "0.9.3"
+embedded-touch = "0.3.0"
 
 [dev-dependencies]
 autons = "0.2.0"

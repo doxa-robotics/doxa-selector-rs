@@ -56,14 +56,18 @@ use autons::Selector;
 use buoyant::{
     color,
     render_target::{EmbeddedGraphicsRenderTarget, RenderTarget},
+    view::AsDrawable,
 };
-use embedded_graphics::prelude::RgbColor;
+use embedded_graphics::{
+    geometry::OriginDimensions as _, pixelcolor::Rgb888, prelude::RgbColor, Drawable,
+};
 use vexide::{
     display::Display,
     task::{self, Task},
 };
 
 mod route;
+mod view;
 
 pub use route::*;
 
@@ -114,13 +118,11 @@ impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
             selection: 0,
         }));
 
-        let mut driver = vexide_embedded_graphics::DisplayDriver::new(display);
-        let mut target = EmbeddedGraphicsRenderTarget::new(&mut driver);
-        target.clear(embedded_graphics::pixelcolor::Rgb888::RED);
-
         Self {
             state: state.clone(),
-            _task: task::spawn(async move {}),
+            _task: task::spawn(async move {
+                view::run(display).await;
+            }),
         }
     }
 

@@ -155,6 +155,9 @@ dependencies = [
  "autons",
  "buoyant",
  "embedded-graphics",
+ "embedded-touch",
+ "embedded-ttf",
+ "rusttype",
  "vexide",
  "vexide-embedded-graphics",
 ]
