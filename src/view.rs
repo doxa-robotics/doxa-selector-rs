@@ -40,18 +40,38 @@ mod spacing {
 
 #[allow(unused)]
 mod font {
-    use std::{cell::OnceCell, sync::OnceLock};
+    use std::{
+        cell::OnceCell,
+        sync::{LazyLock, OnceLock},
+    };
 
     use embedded_graphics::prelude::RgbColor as _;
     use embedded_ttf::{FontTextStyle, FontTextStyleBuilder};
 
     use super::color;
 
+    pub static MONTSERRAT_FONT: LazyLock<rusttype::Font<'static>> = LazyLock::new(|| {
+        rusttype::Font::try_from_bytes(include_bytes!("../assets/Montserrat-Regular.ttf")).unwrap()
+    });
+
     /// Font for body text
-    pub static BODY: OnceLock<FontTextStyle<color::Space>> = OnceLock::new();
-    pub static HEADING: OnceLock<FontTextStyle<color::Space>> = OnceLock::new();
-    /// Font for captions, smaller text
-    pub static CAPTION: OnceLock<FontTextStyle<color::Space>> = OnceLock::new();
+    pub static BODY: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
+        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
+            .font_size(24)
+            .build()
+    });
+    /// Font for captions and smaller text
+    pub static CAPTION: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
+        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
+            .font_size(18)
+            .build()
+    });
+    /// Font for headings
+    pub static HEADING: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
+        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
+            .font_size(32)
+            .build()
+    });
 }
 
 #[allow(unused)]
@@ -67,30 +87,7 @@ mod color {
     pub const FOREGROUND_SECONDARY: Space = Space::CSS_LIGHT_SLATE_GRAY;
 }
 
-fn init_fonts() {
-    let sf_regular = include_bytes!("../assets/Montserrat-Regular.ttf");
-    _ = font::BODY.set(
-        FontTextStyleBuilder::new(rusttype::Font::try_from_bytes(sf_regular).unwrap())
-            .font_size(24)
-            .build(),
-    );
-
-    _ = font::CAPTION.set(
-        FontTextStyleBuilder::new(rusttype::Font::try_from_bytes(sf_regular).unwrap())
-            .font_size(18)
-            .build(),
-    );
-
-    _ = font::HEADING.set(
-        FontTextStyleBuilder::new(rusttype::Font::try_from_bytes(sf_regular).unwrap())
-            .font_size(32)
-            .build(),
-    );
-}
-
 pub async fn run(display: vexide::display::Display) {
-    init_fonts();
-
     let size = Size::new(480, 320);
     // let mut display: SimulatorDisplay<color::Space> = SimulatorDisplay::new(size);
     let mut cloned_display = unsafe { vexide::display::Display::new() };
@@ -198,7 +195,7 @@ fn root_view(state: &AppState) -> impl View<color::Space, AppState> + use<> {
                 brew_tab(state)
             },
             Tab::Clean => {
-                Text::new("Clean", font::BODY.get().unwrap())
+                Text::new("Clean", &*font::BODY)
                     .foreground_color(color::Space::CSS_ORANGE_RED)
                     .padding(Edges::All, spacing::SECTION_MARGIN)
             },
@@ -244,7 +241,7 @@ fn tab_item<C, F: Fn(&mut C)>(
                 }),
                 VStack::new((
                     Circle.frame().with_width(15),
-                    Text::new(name, font::CAPTION.get().unwrap()),
+                    Text::new(name, &*font::CAPTION),
                 ))
                 .with_spacing(spacing::ELEMENT)
                 .padding(Edges::All, spacing::ELEMENT)
@@ -265,10 +262,10 @@ fn tab_item<C, F: Fn(&mut C)>(
 fn brew_tab<C>(_state: &AppState) -> impl View<color::Space, C> + use<C> {
     ScrollView::new(
         VStack::new((
-            Text::new("Good morning", font::HEADING.get().unwrap()),
+            Text::new("Good morning", &*font::HEADING),
             Text::new(
                 "You can't brew coffee in a simulator, but you can pretend.",
-                font::BODY.get().unwrap(),
+                &*font::BODY,
             )
             .multiline_text_alignment(HorizontalTextAlignment::Center),
         ))
@@ -329,12 +326,12 @@ fn toggle_text<C>(
 ) -> impl View<color::Space, C> + use<C> {
     VStack::new((
         HStack::new((
-            Text::new(label, font::BODY.get().unwrap()).foreground_color(color::Space::WHITE),
+            Text::new(label, &*font::BODY).foreground_color(color::Space::WHITE),
             toggle_button(is_on, action),
         ))
         .with_spacing(spacing::ELEMENT),
         if_view!((is_on || !hides_description) {
-            Text::new(description, font::CAPTION.get().unwrap())
+            Text::new(description, &*font::CAPTION)
                 .multiline_text_alignment(HorizontalTextAlignment::Trailing)
                 .foreground_color(color::Space::WHITE)
                 .transition(Move::new(Edge::Trailing))
