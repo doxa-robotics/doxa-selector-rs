@@ -48,6 +48,7 @@
 //!         .await;
 //! }
 //! ```
+#![feature(trait_alias)]
 
 use std::{cell::RefCell, rc::Rc};
 
@@ -61,8 +62,8 @@ mod route;
 
 pub use route::*;
 
-struct SelectorState<R: 'static, const N: usize> {
-    routes: [Route<R>; N],
+struct SelectorState<C: Category, R: 'static, const N: usize> {
+    routes: [Route<C, R>; N],
     selection: usize,
 }
 
@@ -79,14 +80,14 @@ struct SelectorState<R: 'static, const N: usize> {
 /// trait if using vexide's competition runtime.
 ///
 /// [`SelectCompete`]: crate::compete::SelectCompete
-pub struct DoxaSelect<R: 'static, const N: usize> {
-    state: Rc<RefCell<SelectorState<R, N>>>,
+pub struct DoxaSelect<C: Category, R: 'static, const N: usize> {
+    state: Rc<RefCell<SelectorState<C, R, N>>>,
     _task: Task<()>,
 }
 
-impl<R, const N: usize> DoxaSelect<R, N> {
+impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
     /// Creates a new selector from a [`Display`] peripheral and array of routes.
-    pub fn new(display: Display, routes: [Route<R>; N]) -> Self {
+    pub fn new(display: Display, routes: [Route<C, R>; N]) -> Self {
         const {
             assert!(N > 0, "DoxaSelect requires at least one route.");
         }
@@ -110,7 +111,7 @@ impl<R, const N: usize> DoxaSelect<R, N> {
     }
 }
 
-impl<R, const N: usize> Selector<R> for DoxaSelect<R, N> {
+impl<C: Category, R, const N: usize> Selector<R> for DoxaSelect<C, R, N> {
     async fn run(&self, robot: &mut R) {
         {
             let state = self.state.borrow();

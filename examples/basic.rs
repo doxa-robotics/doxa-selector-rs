@@ -2,6 +2,21 @@ use autons::prelude::*;
 use doxa_selector::{route, DoxaSelect};
 use vexide::prelude::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Category {
+    RouteA,
+    RouteB,
+}
+
+impl std::fmt::Display for Category {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Category::RouteA => write!(f, "Route A"),
+            Category::RouteB => write!(f, "Route B"),
+        }
+    }
+}
+
 struct Robot {}
 
 impl Robot {
@@ -22,7 +37,10 @@ async fn main(peripherals: Peripherals) {
     robot
         .compete(DoxaSelect::new(
             peripherals.display,
-            [route!(Robot::route_1), route!(Robot::route_2)],
+            [
+                route!(Category::RouteA, Robot::route_1),
+                route!(Category::RouteB, Robot::route_2),
+            ],
         ))
         .await;
 }

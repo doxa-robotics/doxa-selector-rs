@@ -1,5 +1,10 @@
-use std::{future::Future, pin::Pin};
+use std::{
+    fmt::{Debug, Display},
+    future::Future,
+    pin::Pin,
+};
 
+pub trait Category = Clone + Copy + Eq + Debug + Display;
 type RouteFn<Shared> = for<'s> fn(&'s mut Shared) -> Pin<Box<dyn Future<Output = ()> + 's>>;
 
 /// Route entry for [`DoxaSelect`].
@@ -12,28 +17,20 @@ type RouteFn<Shared> = for<'s> fn(&'s mut Shared) -> Pin<Box<dyn Future<Output =
 ///
 /// [`DoxaSelect`]: crate::DoxaSelect
 #[derive(Debug)]
-pub struct Route<R> {
+pub struct Route<C: Category, R> {
+    pub category: C,
     pub name: &'static str,
     pub description: &'static str,
     pub callback: RouteFn<R>,
 }
 
-impl<R> Clone for Route<R> {
+impl<C: Category, R> Clone for Route<C, R> {
     fn clone(&self) -> Self {
         Self {
+            category: self.category,
             name: self.name,
             description: self.description,
             callback: self.callback,
-        }
-    }
-}
-
-impl<R> Route<R> {
-    pub const fn new(name: &'static str, description: &'static str, callback: RouteFn<R>) -> Self {
-        Self {
-            name,
-            description,
-            callback,
         }
     }
 }
@@ -50,18 +47,29 @@ impl<R> Route<R> {
 /// ```
 #[macro_export]
 macro_rules! route {
-    ($func:path) => {{
-        ::doxa_selector::Route::new(stringify!($func), "", |robot| {
-            ::std::boxed::Box::pin($func(robot))
-        })
+    ($category:expr, $func:path) => {{
+        ::doxa_selector::Route {
+            category: $category,
+            name: stringify!($func),
+            description: "",
+            callback: |robot| ::std::boxed::Box::pin($func(robot)),
+        }
     }};
-    ($name:expr, $func:path) => {{
-        ::doxa_selector::Route::new($name, "", |robot| ::std::boxed::Box::pin($func(robot)))
+    ($category:expr, $name:expr, $func:path) => {{
+        ::doxa_selector::Route {
+            category: $category,
+            name: $name,
+            description: "",
+            callback: |robot| ::std::boxed::Box::pin($func(robot)),
+        }
     }};
-    ($name:expr, $description:expr, $func:path) => {{
-        ::doxa_selector::Route::new($name, $description, |robot| {
-            ::std::boxed::Box::pin($func(robot))
-        })
+    ($category:expr, $name:expr, $description:expr, $func:path) => {{
+        ::doxa_selector::Route {
+            category: $category,
+            name: $name,
+            description: $description,
+            callback: |robot| ::std::boxed::Box::pin($func(robot)),
+        }
     }};
 }
 pub use route;
