@@ -2,7 +2,7 @@ use autons::prelude::*;
 use doxa_selector::{route, DoxaSelect};
 use vexide::prelude::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Category {
     RouteA,
     RouteB,

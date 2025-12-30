@@ -64,6 +64,7 @@ pub use route::*;
 
 struct SelectorState<C: Category, R: 'static, const N: usize> {
     routes: [Route<C, R>; N],
+    categories: Vec<C>,
     selection: usize,
 }
 
@@ -92,8 +93,19 @@ impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
             assert!(N > 0, "DoxaSelect requires at least one route.");
         }
 
+        let categories = {
+            let mut cats = routes
+                .iter()
+                .map(|route| route.category)
+                .collect::<Vec<_>>();
+            cats.sort_unstable();
+            cats.dedup();
+            cats
+        };
+
         let state = Rc::new(RefCell::new(SelectorState {
             routes,
+            categories,
             selection: 0,
         }));
 

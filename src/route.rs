@@ -4,7 +4,7 @@ use std::{
     pin::Pin,
 };
 
-pub trait Category = Clone + Copy + Eq + Debug + Display;
+pub trait Category = Clone + Copy + Eq + Debug + Display + Ord;
 type RouteFn<Shared> = for<'s> fn(&'s mut Shared) -> Pin<Box<dyn Future<Output = ()> + 's>>;
 
 /// Route entry for [`DoxaSelect`].
