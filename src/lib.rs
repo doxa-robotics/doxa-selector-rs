@@ -1,288 +1,121 @@
-#![feature(never_type)]
+//! Simple touchscreen-based autonomous route selector.
+//!
+//! ![Screenshot of the `SimpleSelect` menu showing two routes](https://i.imgur.com/qM9qMsd.png)
+//!
+//! [`SimpleSelect`] is a barebones and lightweight autonomous selector that allows picking
+//! between at most 12 autonomous routes using the V5 Brain's display and touchscreen.
+//!
+//! The selector provides a user interface that mimicks the appearance of other VEXos
+//! dashboards, with basic support for color themes through the [`SimpleSelect::new_with_theme`]
+//! function.
+//!
+//! # Examples
+//!
+//! Robot with two autonomous routes using [`SelectCompete`](crate::compete::SelectCompete).
+//!
+//! ```
+//! use vexide::prelude::*;
+//! use autons::{
+//!     prelude::*,
+//!     simple::{route, SimpleSelect},
+//! };
+//!
+//! struct Robot {}
+//!
+//! impl Robot {
+//!     async fn route_1(&mut self) {}
+//!     async fn route_2(&mut self) {}
+//! }
+//!
+//! impl SelectCompete for Robot {
+//!     async fn driver(&mut self) {
+//!         // ...
+//!     }
+//! }
+//!
+//! #[vexide::main]
+//! async fn main(peripherals: Peripherals) {
+//!     let robot = Robot {};
+//!
+//!     robot
+//!         .compete(SimpleSelect::new(
+//!             peripherals.display,
+//!             [
+//!                 route!("Route 1", Robot::route_1),
+//!                 route!("Route 2", Robot::route_2),
+//!             ],
+//!         ))
+//!         .await;
+//! }
+//! ```
 
-extern crate alloc;
+use std::{cell::RefCell, rc::Rc};
 
-#[allow(unused)]
-mod controller;
-#[cfg(feature = "ui")]
-mod platform;
-
-#[cfg(feature = "ui")]
-use std::string::ToString;
-#[cfg(feature = "ui")]
-use std::time::Duration;
-#[cfg(feature = "ui")]
-use std::time::Instant;
-use std::{
-    boxed::Box,
-    collections::btree_map::BTreeMap,
-    fmt::{Debug, Display},
-    ops::ControlFlow,
-    string::String,
-    vec::Vec,
+use autons::Selector;
+use vexide::{
+    display::Display,
+    task::{self, Task},
 };
 
-use async_trait::async_trait;
-#[cfg(feature = "ui")]
-use platform::slint_platform::SelectorV5Platform;
-#[cfg(feature = "ui")]
-use slint::VecModel;
-use vexide::{competition::CompetitionRuntime, display::Display as VexideDisplay};
+mod route;
 
-#[cfg(feature = "ui")]
-slint::include_modules!();
+pub use route::*;
 
-#[async_trait]
-pub trait AutonRoutine<CompeteT>: 'static {
-    type Return;
-
-    fn name(&self) -> &'static str;
-    fn description(&self) -> &'static str;
-    async fn run(&self, context: &mut CompeteT) -> Self::Return;
+struct SelectorState<R: 'static, const N: usize> {
+    routes: [Route<R>; N],
+    selection: usize,
 }
 
-/// A set of tasks to run when the competition is in a particular mode.
-#[allow(async_fn_in_trait, clippy::unused_async)]
-pub trait CompeteWithSelector: Sized {
-    type Category: Display + Debug + Clone;
-    type Return;
+/// Simple touchscreen-based autonomous route selector.
+///
+/// `SimpleSelect` is a barebones and lightweight autonomous selector that allows picking
+/// between up to 16 autonomous routes using the V5 brain's display and touchscreen.
+///
+/// The selector provides a user interface that mimicks the appearance of other VEXos
+/// dashboards, with basic support for color themes through the [`SimpleSelect::new_with_theme`]
+/// function.
+///
+/// This struct implements the [`Selector`] trait and should be used with the [`SelectCompete`]
+/// trait if using vexide's competition runtime.
+///
+/// [`SelectCompete`]: crate::compete::SelectCompete
+pub struct DoxaSelect<R: 'static, const N: usize> {
+    state: Rc<RefCell<SelectorState<R, N>>>,
+    _task: Task<()>,
+}
 
-    /// Runs when the competition system is connected.
-    ///
-    /// See [`Compete::connected`] for more information.
-    async fn connected(&mut self) {}
+impl<R, const N: usize> DoxaSelect<R, N> {
+    /// Creates a new selector from a [`Display`] peripheral and array of routes.
+    pub fn new(display: Display, routes: [Route<R>; N]) -> Self {
+        const {
+            assert!(N > 0, "DoxaSelect requires at least one route.");
+        }
 
-    /// Runs when the competition system is disconnected.
-    ///
-    /// See [`Compete::disconnected`] for more information.
-    async fn disconnected(&mut self) {}
+        let state = Rc::new(RefCell::new(SelectorState {
+            routes,
+            selection: 0,
+        }));
 
-    /// Returns a map of autonomous routines to run.
-    ///
-    /// This map must not change over the lifetime of the program.
-    fn autonomous_routes<'a, 'b>(
-        &'b self,
-    ) -> BTreeMap<Self::Category, impl AsRef<[&'a dyn AutonRoutine<Self, Return = Self::Return>]>>
-    where
-        Self: 'a;
-
-    /// Runs when the robot is put into driver control mode.
-    ///
-    /// See [`Compete::driver`] for more information.
-    async fn driver(&mut self);
-
-    /// Calibrates the gyro. Called when the user requests a calibration.
-    fn calibrate_gyro(&mut self) {}
-
-    /// Returns whether the gyro is currently calibrating.
-    fn is_gyro_calibrating(&self) -> bool {
-        false
+        Self {
+            state: state.clone(),
+            _task: task::spawn(async move {}),
+        }
     }
 
-    /// Returns a list of diagnostics to display in the UI.
-    fn diagnostics(&self) -> Vec<(String, String)> {
-        Vec::new()
-    }
-
-    /// Runs when an autonomous routine is started.
-    fn autonomous_route_started(&mut self, _route: &dyn AutonRoutine<Self, Return = Self::Return>) {
-    }
-
-    /// Runs when an autonomous routine finishes.
-    fn autonomous_route_finished(&mut self, _return_value: Self::Return) {}
-
-    /// A reference to the controller, if available. This allows the UI task
-    /// to exit early if a controller interaction is detected.
-    fn controller(&self) -> Option<&vexide::controller::Controller> {
-        None
+    /// Programatically selects an autonomous route by index.
+    pub fn select(&mut self, index: usize) {
+        assert!(index < N, "Invalid route selection index.");
+        let mut state = self.state.borrow_mut();
+        state.selection = index;
     }
 }
 
-struct SharedData<'a, T, R> {
-    selected_route: Option<&'a dyn AutonRoutine<T, Return = R>>,
-    default_route: Option<&'a dyn AutonRoutine<T, Return = R>>,
-    user: T,
-    #[cfg(feature = "ui")]
-    platform: SelectorV5Platform,
-}
-
-/// Extension methods for [`Compete`].
-/// Automatically implemented for any type implementing [`Compete`].
-#[allow(clippy::type_complexity)]
-pub trait CompeteWithSelectorExt: CompeteWithSelector
-where
-    Self: 'static,
-{
-    #[allow(async_fn_in_trait)]
-    #[cfg_attr(not(feature = "ui"), allow(unused_variables))]
-    async fn compete_with_selector(
-        self,
-        display: VexideDisplay,
-        default_route: Option<&'static dyn AutonRoutine<Self, Return = Self::Return>>,
-    ) -> ! {
-        #[cfg(feature = "ui")]
-        let platform = {
-            let p = platform::slint_platform::SelectorV5Platform::new(display);
-            slint::platform::set_platform(Box::new(p.clone()))
-                .expect("couldn't set slint platform");
-            p
-        };
-
-        #[allow(clippy::unit_arg)]
-        let runtime = CompetitionRuntime::builder(SharedData {
-            selected_route: None,
-            user: self,
-            #[cfg(feature = "ui")]
-            platform,
-            default_route,
-        })
-        .on_connect(|s| Box::pin(async { ControlFlow::<!>::Continue(s.user.connected().await) }))
-        .on_disconnect(|s| {
-            Box::pin(async { ControlFlow::<!>::Continue(s.user.disconnected().await) })
-        })
-        .while_disabled(|s| {
-            Box::pin(async {
-                #[cfg(feature = "ui")]
-                {
-                    run_window_event_loop(s, false).await
-                }
-                #[cfg(not(feature = "ui"))]
-                {
-                    ControlFlow::<!>::Continue(())
-                }
-            })
-        })
-        .while_autonomous(|s| {
-            Box::pin(async {
-                if let Some(route) = s.selected_route {
-                    let route_rt = route.run(&mut s.user).await;
-                    s.user.autonomous_route_finished(route_rt);
-                } else if let Some(route) = s.default_route {
-                    let route_rt = route.run(&mut s.user).await;
-                    s.user.autonomous_route_finished(route_rt);
-                }
-
-                ControlFlow::<!>::Continue(())
-            })
-        })
-        .while_driving(|s| {
-            Box::pin(async {
-                #[cfg(feature = "ui")]
-                if !vexide::competition::is_connected() {
-                    // If we're not connected to the competition system, run the UI.
-                    // The driver will not be able to control the robot until we are connected!
-                    _ = run_window_event_loop(s, true).await;
-                }
-                ControlFlow::<!>::Continue(s.user.driver().await)
-            })
-        })
-        .finish();
-
-        runtime.await
-    }
-}
-
-impl<R> CompeteWithSelectorExt for R where R: CompeteWithSelector + 'static {}
-
-#[cfg(feature = "ui")]
-async fn run_window_event_loop<T, R: 'static>(
-    s: &mut SharedData<'_, T, R>,
-    is_driver: bool,
-) -> ControlFlow<!>
-where
-    T: CompeteWithSelector<Return = R> + 'static,
-{
-    let window = MainWindow::new().expect("failed to initialize window");
-
-    let mut last_diagnostics_refresh = Instant::now();
-
-    window.set_categories(VecModel::from_slice(
-        &s.user
-            .autonomous_routes()
-            .iter()
-            .map(|x| Category {
-                name: x.0.to_string().into(),
-                routes: VecModel::from_slice(
-                    &x.1.as_ref()
-                        .iter()
-                        .map(|y| Route {
-                            name: y.name().to_string().into(),
-                            description: y.description().to_string().into(),
-                        })
-                        .collect::<Vec<_>>(),
-                ),
-            })
-            .collect::<Vec<_>>(),
-    ));
-
-    let build_diagnostics = |diagnostics: Vec<(String, String)>| {
-        VecModel::from_slice(
-            &diagnostics
-                .iter()
-                .map(|(k, v)| {
-                    VecModel::from_slice(&[
-                        slint::SharedString::from(k.to_string()).into(),
-                        slint::SharedString::from(v.to_string()).into(),
-                    ])
-                })
-                .collect::<Vec<_>>(),
-        )
-    };
-    window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-
-    let mut current_category_id = -1;
-    let mut current_route_id = -1;
-    loop {
-        use vexide::competition;
-
-        s.platform.check_events();
-
-        // Handle the window state
-        let category_id = window.get_picked_category_id();
-        let route_id = window.get_picked_route_id();
-        if category_id >= 0
-            && route_id >= 0
-            && (category_id != current_category_id || route_id != current_route_id)
+impl<R, const N: usize> Selector<R> for DoxaSelect<R, N> {
+    async fn run(&self, robot: &mut R) {
         {
-            let selected_route = *s
-                .user
-                .autonomous_routes()
-                .iter()
-                .nth(category_id as usize)
-                .expect("nonexistent category")
-                .1
-                .as_ref()
-                .get(route_id as usize)
-                .expect("nonexistent route");
-            s.selected_route = Some(selected_route);
-            current_category_id = category_id;
-            current_route_id = route_id;
+            let state = self.state.borrow();
+            (state.routes[state.selection].callback)(robot)
         }
-
-        window.set_gyro_calibrating(s.user.is_gyro_calibrating());
-
-        if window.get_refresh_diagnostics_requested() {
-            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-            window.set_refresh_diagnostics_requested(false);
-        }
-
-        if window.get_gyro_calibration_requested() {
-            s.user.calibrate_gyro();
-            window.set_gyro_calibration_requested(false);
-        }
-
-        if last_diagnostics_refresh.elapsed() > Duration::from_secs(1) {
-            window.set_diagnostics(build_diagnostics(s.user.diagnostics()));
-            last_diagnostics_refresh = Instant::now();
-        }
-
-        if is_driver
-            && (competition::is_connected()
-                || s.user.controller().is_some_and(controller::has_interaction))
-        {
-            break ControlFlow::Continue(());
-        }
-
-        vexide::time::sleep(Duration::from_millis(1000 / 30)).await;
+        .await;
     }
 }

@@ -13,19 +13,13 @@ compress = true
 
 [dependencies]
 vexide = "0.8.0"
-slint = { version = "1.14.1", optional = true, default-features = false, features = [
-  "compat-1-2",
-  "unsafe-single-threaded",
-  "renderer-software",
-  "libm",
+autons = { version = "0.2.0", default-features = false }
+vexide-embedded-graphics = { git = "https://github.com/zabackary/vexide-embedded-graphics.git", branch = "patch/vexide-0.8.0" }
+
+[dev-dependencies]
+autons = "0.2.0"
+vexide = { version = "0.8.0", features = [
+  "full",
+  "vex-sdk-jumptable",
+  "vex-sdk-mock",
 ] }
-rgb = "0.8.50"
-async-trait = "*"
-vex-sdk = "0.27.1"
-
-[build-dependencies]
-slint-build = "1.14.1"
-
-[features]
-default = []
-ui = ["dep:slint"]
