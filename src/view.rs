@@ -88,18 +88,36 @@ mod color {
 }
 
 pub async fn run(display: vexide::display::Display) {
-    let size = Size::new(480, 320);
-    // let mut display: SimulatorDisplay<color::Space> = SimulatorDisplay::new(size);
-    let mut cloned_display = unsafe { vexide::display::Display::new() };
-    let mut driver = vexide_embedded_graphics::DisplayDriver::new(display);
-    let mut target = EmbeddedGraphicsRenderTarget::new_hinted(&mut driver, color::BACKGROUND);
-    // let mut window = Window::new("Coffeeeee", &OutputSettings::default());
-    let app_start = Instant::now();
-    // let mut touch_tracker = MouseTracker::new();
-    let mut another_cloned_display = unsafe { vexide::display::Display::new() };
-    let mut touch = DisplayTouchDriver::new(&mut another_cloned_display);
+    // DISPLAY RENDERING SETUP
 
+    // Initialize display driver, which maps DrawTarget calls to the vexide Display API
+    let mut display_driver = vexide_embedded_graphics::DisplayDriver::new(display);
+    // Initialize another display to use for refreshing the screen
+    let mut display = unsafe {
+        // SAFETY: Technically, creating multiple Display instances is not good,
+        // but in practice, the VEX SDK operates doesn't specify what a "display"
+        // instance itself is, so creating multiple instances that all refer to the
+        // same underlying hardware is okay.
+        vexide::display::Display::new()
+    };
+    display.set_render_mode(vexide::display::RenderMode::DoubleBuffered);
+    // Create a new buoyant render target
+    let mut target =
+        EmbeddedGraphicsRenderTarget::new_hinted(&mut display_driver, color::BACKGROUND);
+
+    // DISPLAY TOUCH SETUP
+    let mut touch_display = unsafe { vexide::display::Display::new() };
+    let mut touch = DisplayTouchDriver::new(&mut touch_display);
+
+    // APPLICATION STATE SETUP
+
+    // Application start time for animations
+    let app_start = Instant::now();
+
+    // Initial application state
     let mut app_data = AppState::default();
+
+    // Create the initial view and state
     let mut view = root_view(&app_data);
     let mut state = view.build_state(&mut app_data);
 
@@ -113,27 +131,32 @@ pub async fn run(display: vexide::display::Display) {
     let mut target_tree =
         &mut view.render_tree(&layout, Point::default(), &env, &mut app_data, &mut state);
 
-    cloned_display.set_render_mode(vexide::display::RenderMode::DoubleBuffered);
+    // Store the last update time, so we can cease animations after inactivity
+    let mut last_update = Instant::now();
+
     loop {
+        // TODO: Frame limiting
         let frame_start = Instant::now();
 
         let time = app_start.elapsed();
         let domain = AnimationDomain::top_level(time);
 
-        // Render animated transition between source and target trees
-        Render::render_animated(
-            &mut target,
-            source_tree,
-            target_tree,
-            &color::Space::WHITE,
-            &domain,
-        );
-        // window.update(target.display());
-        cloned_display.render();
-        target.clear(color::Space::BLACK);
+        if last_update.elapsed() < Duration::from_secs(5) {
+            // Render animated transition between source and target trees
+            Render::render_animated(
+                &mut target,
+                source_tree,
+                target_tree,
+                &color::Space::RED,
+                &domain,
+            );
+            // Flush the rendered frame to the display
+            display.render();
+            // Clear the render target for the next frame
+            target.clear(color::Space::BLACK);
+        }
 
         // Handle events
-        let mut should_exit = false;
         let context = EventContext::new(time);
         for event in touch
             .touches()
@@ -141,10 +164,6 @@ pub async fn run(display: vexide::display::Display) {
             .into_iter()
             .map(|e| Event::Touch(e.clone()))
         {
-            if event == buoyant::event::Event::Exit {
-                should_exit = true;
-                break;
-            }
             let result =
                 view.handle_event(&event, &context, target_tree, &mut app_data, &mut state);
             if result.recompute_view {
@@ -160,10 +179,7 @@ pub async fn run(display: vexide::display::Display) {
                 *target_tree =
                     view.render_tree(&layout, Point::default(), &env, &mut app_data, &mut state);
             }
-        }
-
-        if should_exit {
-            break;
+            last_update = Instant::now();
         }
 
         println!("Frame time: {:?}", frame_start.elapsed());
@@ -360,7 +376,10 @@ fn toggle_button<C>(is_on: bool, on_tap: fn(&mut C)) -> impl View<color::Space, 
                 })
                 .scale_effect(if is_pressed { 1.5 } else { 1.0 }, UnitPoint::center())
                 .padding(Edges::All, 2)
-                .animated(Animation::linear(Duration::from_millis(125)), is_on),
+                .animated(
+                    Animation::ease_out(Duration::from_millis(500)),
+                    (is_on, is_pressed),
+                ),
         ))
         .with_horizontal_alignment(alignment)
         .frame_sized(50, 25)
