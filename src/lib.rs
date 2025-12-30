@@ -49,6 +49,7 @@
 //! }
 //! ```
 #![feature(trait_alias)]
+#![feature(never_type)]
 
 use std::{cell::RefCell, rc::Rc};
 
@@ -67,6 +68,7 @@ use vexide::{
 };
 
 mod route;
+mod touch;
 mod view;
 
 pub use route::*;

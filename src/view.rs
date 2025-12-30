@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use buoyant::{
     animation::Animation,
     environment::DefaultEnvironment,
-    event::EventContext,
+    event::{Event, EventContext},
     if_view, match_view,
     primitives::{Point, UnitPoint},
     render::{AnimatedJoin, AnimationDomain, Render},
@@ -20,7 +20,11 @@ use buoyant::{
     view::{prelude::*, scroll_view::ScrollDirection},
 };
 use embedded_graphics::prelude::*;
+use embedded_touch::traits::TouchInputDevice;
 use embedded_ttf::FontTextStyleBuilder;
+use unwrap_infallible::UnwrapInfallible;
+
+use crate::touch::DisplayTouchDriver;
 
 #[allow(unused)]
 mod spacing {
@@ -95,6 +99,8 @@ pub async fn run(display: vexide::display::Display) {
     // let mut window = Window::new("Coffeeeee", &OutputSettings::default());
     let app_start = Instant::now();
     // let mut touch_tracker = MouseTracker::new();
+    let mut another_cloned_display = unsafe { vexide::display::Display::new() };
+    let mut touch = DisplayTouchDriver::new(&mut another_cloned_display);
 
     let mut app_data = AppState::default();
     let mut view = root_view(&app_data);
@@ -132,10 +138,11 @@ pub async fn run(display: vexide::display::Display) {
         // Handle events
         let mut should_exit = false;
         let context = EventContext::new(time);
-        for event in []
-        // window
-        //     .events()
-        //     .filter_map(|event| touch_tracker.process_event(event))
+        for event in touch
+            .touches()
+            .unwrap_infallible()
+            .into_iter()
+            .map(|e| Event::Touch(e.clone()))
         {
             if event == buoyant::event::Event::Exit {
                 should_exit = true;
@@ -163,7 +170,7 @@ pub async fn run(display: vexide::display::Display) {
         }
 
         println!("Frame time: {:?}", frame_start.elapsed());
-        vexide::time::sleep(Duration::from_millis(0)).await;
+        vexide::time::sleep(Duration::from_millis(10)).await;
     }
 }
 

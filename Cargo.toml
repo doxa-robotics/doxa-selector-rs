@@ -22,6 +22,7 @@ embedded-ttf = "0.2.2"
 vexide-embedded-graphics = { git = "https://github.com/zabackary/vexide-embedded-graphics.git", branch = "patch/vexide-0.8.0" }
 rusttype = "0.9.3"
 embedded-touch = "0.3.0"
+unwrap-infallible = { version = "1.0.0", features = ["never_type"] }
 
 [dev-dependencies]
 autons = "0.2.0"
