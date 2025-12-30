@@ -56,12 +56,22 @@ impl TouchInputDevice for DisplayTouchDriver<'_> {
             raw
         };
 
-        self.touch = Some(embedded_touch::Touch {
-            id: 1,
-            location: filtered,
-            phase,
-            tool: embedded_touch::Tool::Finger,
-        });
-        Ok([self.touch.as_ref().unwrap()])
+        if phase == embedded_touch::Phase::Ended
+            && self
+                .touch
+                .as_ref()
+                .is_some_and(|touch| touch.phase == embedded_touch::Phase::Ended)
+        {
+            // We already ended the previous touch, so nothing new to report
+            Ok(None)
+        } else {
+            self.touch = Some(embedded_touch::Touch {
+                id: 1,
+                location: filtered,
+                phase,
+                tool: embedded_touch::Tool::Finger,
+            });
+            Ok(Some(self.touch.as_ref().unwrap()))
+        }
     }
 }
