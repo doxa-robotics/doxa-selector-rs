@@ -8,16 +8,15 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1764375620,
-        "narHash": "sha256-+U77STyFhfUtRFlZcMDdzNPB82545d0xPxDb2PokYZw=",
+        "lastModified": 1764466446,
+        "narHash": "sha256-uIJcl1WfL96tvJ5QebbqnsP4nQqW7aCp4XYXgfu7CuY=",
         "owner": "vexide",
         "repo": "cargo-v5",
-        "rev": "6f74b62146423ba248eb6e84ffe82c1af2811bc0",
+        "rev": "ef20b73886fbc159e49e1ec83bb5ff69d4e72346",
         "type": "github"
       },
       "original": {
         "owner": "vexide",
-        "ref": "upstreamed-target",
         "repo": "cargo-v5",
         "type": "github"
       }
