@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use buoyant::{primitives::UnitPoint, render::Render, view::prelude::*};
+use buoyant::{primitives::UnitPoint, view::prelude::*};
 use embedded_ttf::FontTextStyle;
 
 use crate::view::{

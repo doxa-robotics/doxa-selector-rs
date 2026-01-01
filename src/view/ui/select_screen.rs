@@ -10,7 +10,7 @@ use crate::view::{
 };
 
 pub fn select_screen<'b, C: crate::Category, R: 'static>(
-    state: &AppState,
+    _state: &AppState,
     data: &'b AppData<C, R>,
 ) -> impl View<color::Color, AppState> + use<'b, C, R> {
     ScrollView::new(

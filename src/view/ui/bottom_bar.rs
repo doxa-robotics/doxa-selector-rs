@@ -1,5 +1,3 @@
-use std::time::Duration;
-
 use buoyant::view::prelude::*;
 
 use crate::view::{
@@ -10,7 +8,7 @@ use crate::view::{
     },
 };
 
-pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
+pub fn bottom_bar(_state: &AppState) -> impl View<color::Color, AppState> {
     HStack::new((
         Text::new("99484A DOXA Robotics", &*crate::view::font::CAPTION)
             .foreground_color(color::M3_ON_SURFACE),
