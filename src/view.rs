@@ -95,6 +95,9 @@ pub async fn run(display: vexide::display::Display) {
     // Store the last update time, so we can cease animations after inactivity
     let mut last_update = Instant::now();
 
+    // Store the last external state to detect changes
+    let mut external_state = app_data.external.borrow().clone();
+
     loop {
         let frame_start = Instant::now();
 
@@ -118,15 +121,26 @@ pub async fn run(display: vexide::display::Display) {
 
         // Handle events
         let context = EventContext::new(time);
-        for event in touch
+        let touch_events = touch
             .touches()
             .unwrap_infallible()
             .into_iter()
-            .map(|e| Event::Touch(e.clone()))
-        {
+            .map(|e| Event::Touch(e.clone()));
+        // Diff external state to generate synthetic events if needed
+        let synthetic_events = {
+            let current_external = app_data.external.borrow();
+            let mut events = Vec::new();
+            if *current_external != external_state {
+                events.push(Event::External);
+                external_state = current_external.clone();
+            }
+            events
+        };
+        for event in touch_events.chain(synthetic_events) {
             let result =
                 view.handle_event(&event, &context, target_tree, &mut app_data, &mut state);
-            if result.recompute_view {
+            // Bouyant seems to have a bug where external events don't trigger recompute_view
+            if result.recompute_view || matches!(event, Event::External) {
                 // Join source and target trees at current time, "freezing" animation progress
                 target_tree.join_from(source_tree, &domain);
                 // Swap trees so the current target becomes the next source.

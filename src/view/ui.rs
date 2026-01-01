@@ -1,28 +1,43 @@
+use std::{cell::RefCell, rc::Rc};
+
 use buoyant::{match_view, view::prelude::*};
 use embedded_graphics::prelude::WebColors as _;
 
 use crate::view::{color, font, spacing};
 
 mod bottom_bar;
-mod brew_tab;
 mod button;
-mod settings_tab;
-mod toggle;
+mod select_screen;
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub(super) struct AppState {
     pub screen: Screen,
-    pub stop_on_weight: bool,
-    pub auto_off: bool,
-    pub auto_brew: bool,
+
+    pub external: Rc<RefCell<ExternalAppState>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ExternalAppState {
+    pub calibrating: bool,
+}
+
+impl AppState {
+    pub fn calibrate(&mut self) {
+        self.external.borrow_mut().calibrating = true;
+        let self_external = self.external.clone();
+        vexide::task::spawn(async move {
+            vexide::time::sleep(std::time::Duration::from_secs(2)).await;
+            self_external.borrow_mut().calibrating = false;
+        })
+        .detach();
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
 pub(super) enum Screen {
     #[default]
-    Brew,
-    Clean,
-    Settings,
+    SelectCategory,
+    SelectRoute,
 }
 
 pub(super) fn root_view(
@@ -30,17 +45,12 @@ pub(super) fn root_view(
 ) -> impl View<crate::view::color::Color, AppState> + use<> {
     VStack::new((
         match_view!(state.screen, {
-            Screen::Brew => {
-                brew_tab::brew_tab(state)
+            Screen::SelectCategory => {
+                select_screen::select_screen(state)
             },
-            Screen::Clean => {
-                Text::new("Clean", &*font::BODY)
-                    .foreground_color(color::Color::CSS_ORANGE_RED)
-                    .padding(Edges::All, spacing::SECTION_MARGIN)
-            },
-            Screen::Settings => {
-                settings_tab::settings_tab(state)
-            },
+            Screen::SelectRoute => {
+                select_screen::select_screen(state)
+            }
         }),
         bottom_bar::bottom_bar(state),
     ))

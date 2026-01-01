@@ -3,7 +3,7 @@ use embedded_graphics::prelude::RgbColor as _;
 
 use crate::view::{color, font, spacing, ui::AppState};
 
-pub fn brew_tab<C>(_state: &AppState) -> impl View<color::Color, C> + use<C> {
+pub fn select_screen<C>(_state: &AppState) -> impl View<color::Color, C> + use<C> {
     ScrollView::new(
         VStack::new((
             Text::new("Good morning", &*font::HEADING),
