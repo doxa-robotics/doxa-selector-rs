@@ -37,7 +37,7 @@ mod ui;
 const FPS: u32 = 30;
 
 /// Duration of each frame
-const FRAME_DURATION: Duration = Duration::from_millis(1000 / FPS as u64);
+const FRAME_DURATION: Duration = Duration::from_micros(1_000_000 / FPS as u64);
 
 /// Minimum duration in between frames
 ///
@@ -142,14 +142,12 @@ pub async fn run(display: vexide::display::Display) {
             last_update = Instant::now();
         }
 
-        let sleep_time = Duration::max(
-            FRAME_DURATION.saturating_sub(frame_start.elapsed()),
-            Duration::from_millis(5),
-        );
+        let elapsed = frame_start.elapsed();
+        let sleep_time = Duration::max(FRAME_DURATION.saturating_sub(elapsed), MIN_FRAME_GAP);
         println!(
-            "Frame time: {:.2?} | Sleep time: {:.2?}",
-            frame_start.elapsed(),
-            sleep_time
+            "\x1B[1A\x1B[KFPS: {:.2} | {:.0}%",
+            1.0 / (elapsed + sleep_time).as_secs_f32(),
+            (elapsed.as_secs_f32() / FRAME_DURATION.as_secs_f32()) * 100.0
         );
         // Throttle to maintain constant FPS
         vexide::time::sleep(sleep_time).await;
