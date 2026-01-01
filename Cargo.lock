@@ -59,7 +59,7 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 [[package]]
 name = "buoyant"
 version = "0.6.0"
-source = "git+https://github.com/zabackary/buoyant.git?branch=patch#4357b991895546ee4f15956bbbbabe7edfc0946a"
+source = "git+https://github.com/zabackary/buoyant.git?branch=patch#8fd2c4da084f49838a8badcce17bbf4719cdd63d"
 dependencies = [
  "embedded-graphics",
  "embedded-graphics-core",
