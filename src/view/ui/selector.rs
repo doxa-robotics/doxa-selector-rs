@@ -10,7 +10,7 @@ const CARD_HEIGHT: u32 = 56;
 
 pub fn selector<'a, C: 'a, OnSelectFn>(
     title: &'a str,
-    items: &'a [(usize, String)],
+    items: &'a [(usize, String, usize)],
     on_select: OnSelectFn,
 ) -> impl View<color::Color, C> + use<'a, C, OnSelectFn>
 where
@@ -25,10 +25,10 @@ where
                 // there are only half the number of categories, and then we index
                 // into the original list to get the correct category names.
                 &items[0..(items.len().div_ceil(2))],
-                move |(index, _): &(usize, String)| {
+                move |(index, _, _): &(usize, String, usize)| {
                     let category_name_1 = &items[*index * 2].1;
                     // We're not guaranteed to have a second category if the number of categories is odd
-                    let category_name_2 = items.get(*index * 2 + 1).map(|(_, name)| name);
+                    let category_name_2 = items.get(*index * 2 + 1).map(|x| &x.1);
 
                     HStack::new((
                         crate::view::ui::card::card(

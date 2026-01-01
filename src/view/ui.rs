@@ -1,21 +1,28 @@
-use std::{cell::RefCell, rc::Rc, time::Duration};
+use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Duration};
 
-use buoyant::{match_view, view::prelude::*};
+use buoyant::{
+    transition::{Move, Slide},
+    view::prelude::*,
+};
 
-use crate::{view::ui::select_category_screen::select_category_screen, ExternalState, Route};
+use crate::{ExternalState, Route};
 
 mod bottom_bar;
 mod button;
 mod calibrating_overlay;
 mod card;
 mod select_category_screen;
+mod select_route_screen;
 mod selector;
 
 #[derive(Debug, Clone)]
 pub(super) struct AppData<C: crate::route::Category, R: 'static> {
     routes: Vec<Route<C, R>>,
     categories: Vec<C>,
-    category_names: Vec<(usize, String)>,
+    /// Vec<(category_index, category_name, category_index)>
+    category_names: Vec<(usize, String, usize)>,
+    /// (category_index) -> Vec<(route_index, route_name, global_route_index)>
+    route_names_map: HashMap<usize, Vec<(usize, String, usize)>>,
 }
 
 impl<C: crate::route::Category, R: 'static> AppData<C, R> {
@@ -23,17 +30,27 @@ impl<C: crate::route::Category, R: 'static> AppData<C, R> {
         let category_names = categories
             .iter()
             .enumerate()
-            .map(|(i, c)| (i, c.to_string()))
+            .map(|(i, c)| (i, c.to_string(), i))
             .collect();
+        let mut route_names_map: HashMap<usize, Vec<(usize, String, usize)>> = HashMap::new();
+        for (i, route) in routes.iter().enumerate() {
+            let category_index = categories
+                .iter()
+                .position(|c| *c == route.category)
+                .expect("Route category not found in categories list.");
+            let entry = route_names_map.entry(category_index).or_default();
+            entry.push((entry.len(), route.name.to_string(), i));
+        }
         Self {
             routes,
             categories,
             category_names,
+            route_names_map,
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct AppState {
     screen: Screen,
 
@@ -66,6 +83,7 @@ pub(super) enum Screen {
     #[default]
     SelectCategory,
     SelectRoute(usize),
+    ConfirmSelection,
 }
 
 pub(super) fn root_view<'a, C: crate::route::Category, R: 'static>(
@@ -74,14 +92,25 @@ pub(super) fn root_view<'a, C: crate::route::Category, R: 'static>(
 ) -> impl View<crate::view::color::Color, AppState> + use<'a, C, R> {
     ZStack::new((
         VStack::new((
-            match_view!(state.screen, {
-                Screen::SelectCategory => {
+            // In principle, it would be better to use a match_view! here, but
+            // because buoyant's implementation of OneOfN doesn't implement
+            // animations correctly, we just stack everything and use
+            // conditional rendering.
+            ZStack::new((
+                matches!(state.screen, Screen::SelectCategory).then(|| {
                     select_category_screen::select_category_screen(data)
+                        .transition(Slide::trailing())
+                }),
+                match state.screen {
+                    Screen::SelectRoute(category_index) => Some(
+                        select_route_screen::select_route_screen(data, category_index)
+                            .transition(Slide::trailing()),
+                    ),
+                    _ => None,
                 },
-                Screen::SelectRoute(_category_index) => {
-                    EmptyView
-                }
-            })
+                matches!(state.screen, Screen::ConfirmSelection)
+                    .then(|| EmptyView.transition(Move::bottom())),
+            ))
             .animated(
                 Animation::ease_in_out(Duration::from_millis(400)),
                 state.screen,

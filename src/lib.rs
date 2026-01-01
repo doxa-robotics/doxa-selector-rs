@@ -39,7 +39,6 @@ struct ExternalState {
 pub struct DoxaSelect<C: Category, R: 'static> {
     state: Rc<RefCell<ExternalState>>,
     routes: Vec<Route<C, R>>,
-    categories: Vec<C>,
     _task: Task<()>,
 }
 
@@ -68,9 +67,8 @@ impl<C: Category, R> DoxaSelect<C, R> {
         Self {
             state: state.clone(),
             routes: routes.to_vec(),
-            categories: categories.to_vec(),
             _task: task::spawn(async move {
-                view::run(display, state, routes.to_vec(), categories.to_vec()).await;
+                view::run(display, state, routes.to_vec(), categories).await;
             }),
         }
     }
