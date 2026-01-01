@@ -9,6 +9,8 @@ use crate::view::{
     ui::{AppData, AppState},
 };
 
+const CARD_HEIGHT: u32 = 56;
+
 pub fn select_screen<'b, C: crate::Category, R: 'static>(
     _state: &AppState,
     data: &'b AppData<C, R>,
@@ -30,17 +32,16 @@ pub fn select_screen<'b, C: crate::Category, R: 'static>(
                         .get(*index * 2 + 1)
                         .map(|(_, name)| name);
 
-                    let card_1 = crate::view::ui::card::card(
-                        category_name_1,
-                        crate::view::ui::card::CardStyle::default(),
-                        move |state: &mut AppState| {
-                            state.screen = crate::view::ui::Screen::SelectRoute(*index * 2);
-                        },
-                    )
-                    .flex_frame()
-                    .with_ideal_height(56);
                     HStack::new((
-                        card_1, 
+                        crate::view::ui::card::card(
+                            category_name_1,
+                            crate::view::ui::card::CardStyle::default(),
+                            move |state: &mut AppState| {
+                                state.screen = crate::view::ui::Screen::SelectRoute(*index * 2);
+                            },
+                        )
+                        .flex_frame()
+                        .with_ideal_height(CARD_HEIGHT), 
                         match_view!(category_name_2, {
                             Some(category_name_2) => {
                                 let card_2 = crate::view::ui::card::card(
@@ -51,7 +52,7 @@ pub fn select_screen<'b, C: crate::Category, R: 'static>(
                                     },
                                 )
                                 .flex_frame()
-                                .with_ideal_height(56);
+                                .with_ideal_height(CARD_HEIGHT);
                                 card_2
                             },
                             None => {
@@ -70,4 +71,9 @@ pub fn select_screen<'b, C: crate::Category, R: 'static>(
     )
     .with_direction(ScrollDirection::Vertical)
     .with_overlapping_bar(true)
+    .with_bar_visibility(if data.category_names.len() > 4 {
+        buoyant::view::scroll_view::ScrollBarVisibility::Always
+    } else {
+        buoyant::view::scroll_view::ScrollBarVisibility::Never
+    })
 }
