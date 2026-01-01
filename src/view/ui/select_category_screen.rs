@@ -1,13 +1,10 @@
 use buoyant::view::View;
 
-use crate::{
-    view::{color, AppState},
-    Category,
-};
+use crate::view::{color, AppState};
 
-pub fn select_category_screen<C: Category, R>(
-    data: &crate::view::AppData<C, R>,
-) -> impl View<color::Color, AppState> + use<'_, C, R> {
+pub fn select_category_screen(
+    data: &crate::view::AppData,
+) -> impl View<color::Color, AppState> + use<'_> {
     super::selector::selector(
         "Select category",
         &data.category_names,

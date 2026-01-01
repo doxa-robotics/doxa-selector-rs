@@ -16,17 +16,18 @@ mod select_route_screen;
 mod selector;
 
 #[derive(Debug, Clone)]
-pub(super) struct AppData<C: crate::route::Category, R: 'static> {
-    routes: Vec<Route<C, R>>,
-    categories: Vec<C>,
+pub(super) struct AppData {
     /// Vec<(category_index, category_name, category_index)>
     category_names: Vec<(usize, String, usize)>,
     /// (category_index) -> Vec<(route_index, route_name, global_route_index)>
     route_names_map: HashMap<usize, Vec<(usize, String, usize)>>,
 }
 
-impl<C: crate::route::Category, R: 'static> AppData<C, R> {
-    pub fn new(routes: Vec<Route<C, R>>, categories: Vec<C>) -> Self {
+impl AppData {
+    pub fn new<C: crate::route::Category, R: 'static>(
+        routes: Vec<Route<C, R>>,
+        categories: Vec<C>,
+    ) -> Self {
         let category_names = categories
             .iter()
             .enumerate()
@@ -42,8 +43,6 @@ impl<C: crate::route::Category, R: 'static> AppData<C, R> {
             entry.push((entry.len(), route.name.to_string(), i));
         }
         Self {
-            routes,
-            categories,
             category_names,
             route_names_map,
         }
@@ -86,10 +85,10 @@ pub(super) enum Screen {
     ConfirmSelection,
 }
 
-pub(super) fn root_view<'a, C: crate::route::Category, R: 'static>(
+pub(super) fn root_view<'a>(
     state: &AppState,
-    data: &'a AppData<C, R>,
-) -> impl View<crate::view::color::Color, AppState> + use<'a, C, R> {
+    data: &'a AppData,
+) -> impl View<crate::view::color::Color, AppState> + use<'a> {
     ZStack::new((
         VStack::new((
             // In principle, it would be better to use a match_view! here, but
