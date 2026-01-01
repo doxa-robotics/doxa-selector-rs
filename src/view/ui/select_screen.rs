@@ -55,7 +55,7 @@ pub fn select_screen<'b, C: crate::Category, R: 'static>(
                                 card_2
                             },
                             None => {
-                                Spacer::default().flex_frame()
+                                EmptyView
                             },
                         })
                     )).with_spacing(spacing::COMPONENT)
