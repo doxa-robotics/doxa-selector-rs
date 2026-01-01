@@ -35,14 +35,7 @@ pub fn bottom_bar<C: crate::Category, R: 'static>(
     .with_spacing(spacing::COMPONENT)
     .flex_infinite_width(HorizontalAlignment::Center)
     .padding(Edges::All, spacing::COMPONENT)
-    .background_color(
-        if state.external.borrow().calibrating {
-            color::M3_ERROR_CONTAINER
-        } else {
-            color::M3_SURFACE_VARIANT
-        },
-        Capsule,
-    )
+    .background_color(color::M3_SURFACE_CONTAINER_HIGHEST, Capsule)
     .padding(Edges::Horizontal, spacing::EDGE)
     .padding(Edges::Bottom, spacing::EDGE)
     .animated(

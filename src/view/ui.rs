@@ -6,6 +6,7 @@ use crate::ExternalState;
 
 mod bottom_bar;
 mod button;
+mod calibrating_overlay;
 mod select_screen;
 
 #[derive(Debug, Clone)]
@@ -46,15 +47,18 @@ pub(super) enum Screen {
 pub(super) fn root_view<C: crate::route::Category, R>(
     state: &AppState<C, R>,
 ) -> impl View<crate::view::color::Color, AppState<C, R>> {
-    VStack::new((
-        match_view!(state.screen, {
-            Screen::SelectCategory => {
-                select_screen::select_screen(state)
-            },
-            Screen::SelectRoute => {
-                select_screen::select_screen(state)
-            }
-        }),
-        bottom_bar::bottom_bar(state),
+    ZStack::new((
+        VStack::new((
+            match_view!(state.screen, {
+                Screen::SelectCategory => {
+                    select_screen::select_screen(state)
+                },
+                Screen::SelectRoute => {
+                    select_screen::select_screen(state)
+                }
+            }),
+            bottom_bar::bottom_bar(state),
+        )),
+        calibrating_overlay::calibrating_overlay(state),
     ))
 }
