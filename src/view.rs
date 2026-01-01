@@ -30,6 +30,24 @@ mod font;
 mod spacing;
 mod ui;
 
+/// Target frames per second
+///
+/// The display can do 60 FPS, but to avoid unnecessary CPU usage, we limit to
+/// 30 FPS
+const FPS: u32 = 30;
+
+/// Duration of each frame
+const FRAME_DURATION: Duration = Duration::from_millis(1000 / FPS as u64);
+
+/// Minimum duration in between frames
+///
+/// To avoid hogging the executor, we ensure at least this much time passes
+/// between frames
+const MIN_FRAME_GAP: Duration = Duration::from_millis(5);
+
+/// Time before we stop rendering due to inactivity
+const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(5);
+
 pub async fn run(display: vexide::display::Display) {
     // DISPLAY RENDERING SETUP
 
@@ -78,13 +96,12 @@ pub async fn run(display: vexide::display::Display) {
     let mut last_update = Instant::now();
 
     loop {
-        // TODO: Frame limiting
         let frame_start = Instant::now();
 
         let time = app_start.elapsed();
         let domain = AnimationDomain::top_level(time);
 
-        if last_update.elapsed() < Duration::from_secs(5) {
+        if last_update.elapsed() < INACTIVITY_TIMEOUT {
             // Render animated transition between source and target trees
             Render::render_animated(
                 &mut target,
@@ -125,7 +142,16 @@ pub async fn run(display: vexide::display::Display) {
             last_update = Instant::now();
         }
 
-        println!("Frame time: {:?}", frame_start.elapsed());
-        vexide::time::sleep(Duration::from_millis(10)).await;
+        let sleep_time = Duration::max(
+            FRAME_DURATION.saturating_sub(frame_start.elapsed()),
+            Duration::from_millis(5),
+        );
+        println!(
+            "Frame time: {:.2?} | Sleep time: {:.2?}",
+            frame_start.elapsed(),
+            sleep_time
+        );
+        // Throttle to maintain constant FPS
+        vexide::time::sleep(sleep_time).await;
     }
 }
