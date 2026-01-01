@@ -1,25 +1,37 @@
 use buoyant::view::{prelude::*, scroll_view::ScrollDirection};
 use embedded_graphics::prelude::RgbColor as _;
 
-use crate::view::{color, font, spacing, ui::AppState};
+use crate::view::{
+    color, font, spacing,
+    ui::{AppData, AppState},
+};
 
-pub fn select_screen<Captures, C: crate::Category, R: 'static>(
-    _state: &AppState<C, R>,
-) -> impl View<color::Color, Captures> {
+pub fn select_screen<'b, C: crate::Category, R: 'static>(
+    state: &AppState,
+    data: &'b AppData<C, R>,
+) -> impl View<color::Color, AppState> + use<'b, C, R> {
     ScrollView::new(
         VStack::new((
-            Text::new("Good morning", &*font::HEADING),
-            Text::new(
-                "You can't brew coffee in a simulator, but you can pretend.",
-                &*font::BODY,
-            )
-            .multiline_text_alignment(HorizontalTextAlignment::Center),
+            Text::new("Select category", &*font::HEADING),
+            ForEach::<12>::new_vertical(
+                &data.category_names,
+                |(index, category_name): &(usize, String)| {
+                    crate::view::ui::card::card(
+                        category_name,
+                        crate::view::ui::card::CardStyle::default(),
+                        move |state: &mut AppState| {
+                            // TODO: we need to use a Lens to correctly update the state to the right category
+                            state.screen = crate::view::ui::Screen::SelectRoute;
+                        },
+                    )
+                },
+            ),
         ))
         .with_spacing(spacing::COMPONENT)
         .with_alignment(HorizontalAlignment::Center)
-        .flex_infinite_width(HorizontalAlignment::Center)
         .padding(Edges::All, spacing::SECTION_MARGIN)
         .foreground_color(color::Color::WHITE),
     )
-    .with_direction(ScrollDirection::Both)
+    .with_direction(ScrollDirection::Vertical)
+    .with_overlapping_bar(true)
 }

@@ -11,9 +11,7 @@ use crate::view::{
     },
 };
 
-pub fn calibrating_overlay<C: crate::Category, R: 'static>(
-    state: &AppState<C, R>,
-) -> impl View<color::Color, AppState<C, R>> {
+pub fn calibrating_overlay(state: &AppState) -> impl View<color::Color, AppState> {
     // TODO: we always render this, even when not calibrating. Optimize?
     let calibrating = state.external.borrow().calibrating;
     RoundedRectangle::new(32)

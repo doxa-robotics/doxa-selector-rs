@@ -65,31 +65,11 @@ mod view;
 
 pub use route::*;
 
-#[derive(Debug)]
-struct ExternalState<C: Category, R: 'static> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
+struct ExternalState {
     calibrating: bool,
 
-    routes: Rc<Vec<Route<C, R>>>,
-    categories: Rc<Vec<C>>,
     selection: usize,
-}
-
-impl<C: Category, R: 'static> Clone for ExternalState<C, R> {
-    fn clone(&self) -> Self {
-        Self {
-            calibrating: self.calibrating,
-            routes: self.routes.clone(),
-            categories: self.categories.clone(),
-            selection: self.selection,
-        }
-    }
-}
-
-impl<C: Category, R: 'static> ExternalState<C, R> {
-    /// Soft equality check that ignores the Rc'd fields.
-    pub fn soft_eq(&self, other: &Self) -> bool {
-        self.calibrating == other.calibrating && self.selection == other.selection
-    }
 }
 
 /// Simple touchscreen-based autonomous route selector.
@@ -106,7 +86,9 @@ impl<C: Category, R: 'static> ExternalState<C, R> {
 ///
 /// [`SelectCompete`]: crate::compete::SelectCompete
 pub struct DoxaSelect<C: Category, R: 'static> {
-    state: Rc<RefCell<ExternalState<C, R>>>,
+    state: Rc<RefCell<ExternalState>>,
+    routes: Vec<Route<C, R>>,
+    categories: Vec<C>,
     _task: Task<()>,
 }
 
@@ -128,16 +110,16 @@ impl<C: Category, R> DoxaSelect<C, R> {
         };
 
         let state = Rc::new(RefCell::new(ExternalState {
-            routes: Rc::new(routes.to_vec()),
-            categories: Rc::new(categories),
             selection: 0,
             calibrating: false,
         }));
 
         Self {
             state: state.clone(),
+            routes: routes.to_vec(),
+            categories: categories.to_vec(),
             _task: task::spawn(async move {
-                view::run(display, state).await;
+                view::run(display, state, routes.to_vec(), categories.to_vec()).await;
             }),
         }
     }
@@ -153,7 +135,7 @@ impl<C: Category, R> Selector<R> for DoxaSelect<C, R> {
     async fn run(&self, robot: &mut R) {
         {
             let state = self.state.borrow();
-            (state.routes[state.selection].callback)(robot)
+            (self.routes[state.selection].callback)(robot)
         }
         .await;
     }

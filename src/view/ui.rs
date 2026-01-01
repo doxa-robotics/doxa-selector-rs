@@ -2,22 +2,45 @@ use std::{cell::RefCell, rc::Rc};
 
 use buoyant::{match_view, view::prelude::*};
 
-use crate::ExternalState;
+use crate::{ExternalState, Route};
 
 mod bottom_bar;
 mod button;
 mod calibrating_overlay;
+mod card;
 mod select_screen;
 
 #[derive(Debug, Clone)]
-pub(super) struct AppState<C: crate::route::Category, R: 'static> {
-    pub screen: Screen,
-
-    pub external: Rc<RefCell<ExternalState<C, R>>>,
+pub(super) struct AppData<C: crate::route::Category, R: 'static> {
+    routes: Vec<Route<C, R>>,
+    categories: Vec<C>,
+    category_names: Vec<(usize, String)>,
 }
 
-impl<C: crate::route::Category, R> AppState<C, R> {
-    pub fn new(external: Rc<RefCell<ExternalState<C, R>>>) -> Self {
+impl<C: crate::route::Category, R: 'static> AppData<C, R> {
+    pub fn new(routes: Vec<Route<C, R>>, categories: Vec<C>) -> Self {
+        let category_names = categories
+            .iter()
+            .enumerate()
+            .map(|(i, c)| (i, c.to_string()))
+            .collect();
+        Self {
+            routes,
+            categories,
+            category_names,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub(super) struct AppState {
+    screen: Screen,
+
+    pub external: Rc<RefCell<ExternalState>>,
+}
+
+impl AppState {
+    pub fn new(external: Rc<RefCell<ExternalState>>) -> Self {
         Self {
             screen: Screen::default(),
             external,
@@ -25,7 +48,7 @@ impl<C: crate::route::Category, R> AppState<C, R> {
     }
 }
 
-impl<C: crate::route::Category, R> AppState<C, R> {
+impl AppState {
     pub fn calibrate(&mut self) {
         self.external.borrow_mut().calibrating = true;
         let self_external = self.external.clone();
@@ -44,17 +67,18 @@ pub(super) enum Screen {
     SelectRoute,
 }
 
-pub(super) fn root_view<C: crate::route::Category, R>(
-    state: &AppState<C, R>,
-) -> impl View<crate::view::color::Color, AppState<C, R>> {
+pub(super) fn root_view<'a, 'b, C: crate::route::Category, R: 'static>(
+    state: &'a AppState,
+    data: &'b AppData<C, R>,
+) -> impl View<crate::view::color::Color, AppState> + use<'b, C, R> {
     ZStack::new((
         VStack::new((
             match_view!(state.screen, {
                 Screen::SelectCategory => {
-                    select_screen::select_screen(state)
+                    select_screen::select_screen(state, data)
                 },
                 Screen::SelectRoute => {
-                    select_screen::select_screen(state)
+                    select_screen::select_screen(state, data)
                 }
             }),
             bottom_bar::bottom_bar(state),

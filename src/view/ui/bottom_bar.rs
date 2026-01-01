@@ -10,9 +10,7 @@ use crate::view::{
     },
 };
 
-pub fn bottom_bar<C: crate::Category, R: 'static>(
-    state: &AppState<C, R>,
-) -> impl View<color::Color, AppState<C, R>> {
+pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
     HStack::new((
         Text::new("99484A DOXA Robotics", &*crate::view::font::CAPTION)
             .foreground_color(color::M3_ON_SURFACE),
@@ -20,14 +18,14 @@ pub fn bottom_bar<C: crate::Category, R: 'static>(
         button::button(
             "Recalibrate",
             ButtonStyle::default(),
-            |state: &mut AppState<C, R>| {
+            |state: &mut AppState| {
                 state.calibrate();
             },
         ),
         button::button(
             "Diagnostics",
             ButtonStyle::default(),
-            |state: &mut AppState<C, R>| {
+            |state: &mut AppState| {
                 state.screen = crate::view::ui::Screen::SelectRoute;
             },
         ),

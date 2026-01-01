@@ -25,7 +25,7 @@ use unwrap_infallible::UnwrapInfallible;
 
 use crate::{
     driver::DisplayTouchDriver,
-    view::ui::{root_view, AppState},
+    view::ui::{root_view, AppData, AppState},
 };
 
 mod color;
@@ -51,9 +51,11 @@ const MIN_FRAME_GAP: Duration = Duration::from_millis(5);
 /// Time before we stop rendering due to inactivity
 const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(5);
 
-pub async fn run<C: crate::route::Category, R>(
+pub async fn run<C: crate::route::Category, R: 'static>(
     display: vexide::display::Display,
-    external: Rc<RefCell<crate::ExternalState<C, R>>>,
+    external: Rc<RefCell<crate::ExternalState>>,
+    routes: Vec<crate::Route<C, R>>,
+    categories: Vec<C>,
 ) {
     // DISPLAY RENDERING SETUP
 
@@ -82,27 +84,28 @@ pub async fn run<C: crate::route::Category, R>(
     let app_start = Instant::now();
 
     // Initial application state
-    let mut app_data = AppState::new(external);
+    let mut app_state = AppState::new(external);
+    let app_data = AppData::new(routes, categories);
 
     // Create the initial view and state
-    let mut view = root_view(&app_data);
-    let mut state = view.build_state(&mut app_data);
+    let mut view = root_view(&app_state, &app_data);
+    let mut state = view.build_state(&mut app_state);
 
     // Create initial source and target trees for animation
     let time = app_start.elapsed();
     let env = DefaultEnvironment::new(time);
-    let layout = view.layout(&target.size().into(), &env, &mut app_data, &mut state);
+    let layout = view.layout(&target.size().into(), &env, &mut app_state, &mut state);
 
     let mut source_tree =
-        &mut view.render_tree(&layout, Point::default(), &env, &mut app_data, &mut state);
+        &mut view.render_tree(&layout, Point::default(), &env, &mut app_state, &mut state);
     let mut target_tree =
-        &mut view.render_tree(&layout, Point::default(), &env, &mut app_data, &mut state);
+        &mut view.render_tree(&layout, Point::default(), &env, &mut app_state, &mut state);
 
     // Store the last update time, so we can cease animations after inactivity
     let mut last_update = Instant::now();
 
     // Store the last external state to detect changes
-    let mut external_state = app_data.external.borrow().clone();
+    let mut external_state = app_state.external.borrow().clone();
 
     loop {
         let frame_start = Instant::now();
@@ -134,17 +137,17 @@ pub async fn run<C: crate::route::Category, R>(
             .map(|e| Event::Touch(e.clone()));
         // Diff external state to generate synthetic events if needed
         let synthetic_events = {
-            let current_external = app_data.external.borrow();
+            let current_external = app_state.external.borrow();
             let mut events = Vec::new();
-            if !current_external.soft_eq(&external_state) {
+            if *current_external != external_state {
                 events.push(Event::External);
-                external_state = app_data.external.borrow().clone();
+                external_state = app_state.external.borrow().clone();
             }
             events
         };
         for event in touch_events.chain(synthetic_events) {
             let result =
-                view.handle_event(&event, &context, target_tree, &mut app_data, &mut state);
+                view.handle_event(&event, &context, target_tree, &mut app_state, &mut state);
             // Bouyant seems to have a bug where external events don't trigger recompute_view
             if result.recompute_view || matches!(event, Event::External) {
                 // Join source and target trees at current time, "freezing" animation progress
@@ -153,11 +156,11 @@ pub async fn run<C: crate::route::Category, R>(
                 // Note this swaps the references instead of the whole section of memory
                 core::mem::swap(&mut source_tree, &mut target_tree);
                 // Create new view and target tree
-                view = root_view(&app_data);
+                view = root_view(&app_state, &app_data);
                 let env = DefaultEnvironment::new(time);
-                let layout = view.layout(&target.size().into(), &env, &mut app_data, &mut state);
+                let layout = view.layout(&target.size().into(), &env, &mut app_state, &mut state);
                 *target_tree =
-                    view.render_tree(&layout, Point::default(), &env, &mut app_data, &mut state);
+                    view.render_tree(&layout, Point::default(), &env, &mut app_state, &mut state);
             }
             last_update = Instant::now();
         }
