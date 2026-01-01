@@ -50,9 +50,9 @@ impl AppState {
 
 impl AppState {
     pub fn calibrate(&mut self) {
-        self.external.borrow_mut().calibrating = true;
         let self_external = self.external.clone();
         vexide::task::spawn(async move {
+            self_external.borrow_mut().calibrating = true;
             vexide::time::sleep(std::time::Duration::from_secs(2)).await;
             self_external.borrow_mut().calibrating = false;
         })
