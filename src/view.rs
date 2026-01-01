@@ -9,83 +9,26 @@
 use std::time::{Duration, Instant};
 
 use buoyant::{
-    animation::Animation,
     environment::DefaultEnvironment,
     event::{Event, EventContext},
-    if_view, match_view,
-    primitives::{Point, UnitPoint},
+    primitives::Point,
     render::{AnimatedJoin, AnimationDomain, Render},
     render_target::{EmbeddedGraphicsRenderTarget, RenderTarget as _},
-    transition::{Edge, Move},
-    view::{prelude::*, scroll_view::ScrollDirection},
+    view::prelude::*,
 };
 use embedded_graphics::prelude::*;
 use embedded_touch::traits::TouchInputDevice;
-use embedded_ttf::FontTextStyleBuilder;
 use unwrap_infallible::UnwrapInfallible;
 
-use crate::touch::DisplayTouchDriver;
+use crate::{
+    driver::DisplayTouchDriver,
+    view::ui::{root_view, AppState},
+};
 
-#[allow(unused)]
-mod spacing {
-    /// Spacing between sections / groups
-    pub const SECTION: u32 = 24;
-    /// Outer padding to the edge of the screen
-    pub const SECTION_MARGIN: u32 = 16;
-    /// Spacing between distinct visual components in a section / group
-    pub const COMPONENT: u32 = 16;
-    /// Spacing between elements within a component
-    pub const ELEMENT: u32 = 8;
-}
-
-#[allow(unused)]
-mod font {
-    use std::{
-        cell::OnceCell,
-        sync::{LazyLock, OnceLock},
-    };
-
-    use embedded_graphics::prelude::RgbColor as _;
-    use embedded_ttf::{FontTextStyle, FontTextStyleBuilder};
-
-    use super::color;
-
-    pub static MONTSERRAT_FONT: LazyLock<rusttype::Font<'static>> = LazyLock::new(|| {
-        rusttype::Font::try_from_bytes(include_bytes!("../assets/Montserrat-Regular.ttf")).unwrap()
-    });
-
-    /// Font for body text
-    pub static BODY: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
-        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
-            .font_size(24)
-            .build()
-    });
-    /// Font for captions and smaller text
-    pub static CAPTION: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
-        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
-            .font_size(18)
-            .build()
-    });
-    /// Font for headings
-    pub static HEADING: LazyLock<FontTextStyle<color::Space>> = LazyLock::new(|| {
-        FontTextStyleBuilder::new((*MONTSERRAT_FONT).clone())
-            .font_size(32)
-            .build()
-    });
-}
-
-#[allow(unused)]
-mod color {
-    use embedded_graphics::prelude::*;
-
-    /// Use this alias instead of directly referring to a specific `embedded_graphics`
-    /// color type to allow portability between displays
-    pub type Space = embedded_graphics::pixelcolor::Rgb888;
-    pub const ACCENT: Space = Space::CSS_LIGHT_SKY_BLUE;
-    pub const BACKGROUND: Space = Space::BLACK;
-    pub const BACKGROUND_SECONDARY: Space = Space::CSS_DARK_SLATE_GRAY;
-    pub const FOREGROUND_SECONDARY: Space = Space::CSS_LIGHT_SLATE_GRAY;
-}
+mod color;
+mod font;
+mod spacing;
+mod ui;
 
 pub async fn run(display: vexide::display::Display) {
     // DISPLAY RENDERING SETUP
@@ -147,13 +90,13 @@ pub async fn run(display: vexide::display::Display) {
                 &mut target,
                 source_tree,
                 target_tree,
-                &color::Space::RED,
+                &color::Color::RED,
                 &domain,
             );
             // Flush the rendered frame to the display
             display.render();
             // Clear the render target for the next frame
-            target.clear(color::Space::BLACK);
+            target.clear(color::Color::BLACK);
         }
 
         // Handle events
@@ -185,204 +128,4 @@ pub async fn run(display: vexide::display::Display) {
         println!("Frame time: {:?}", frame_start.elapsed());
         vexide::time::sleep(Duration::from_millis(10)).await;
     }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
-enum Tab {
-    #[default]
-    Brew,
-    Clean,
-    Settings,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-struct AppState {
-    pub tab: Tab,
-    pub stop_on_weight: bool,
-    pub auto_off: bool,
-    pub auto_brew: bool,
-}
-
-fn root_view(state: &AppState) -> impl View<color::Space, AppState> + use<> {
-    VStack::new((
-        Lens::new(tab_bar(state.tab), |state: &mut AppState| &mut state.tab),
-        match_view!(state.tab, {
-            Tab::Brew => {
-                brew_tab(state)
-            },
-            Tab::Clean => {
-                Text::new("Clean", &*font::BODY)
-                    .foreground_color(color::Space::CSS_ORANGE_RED)
-                    .padding(Edges::All, spacing::SECTION_MARGIN)
-            },
-            Tab::Settings => {
-                settings_tab(state)
-            },
-        }),
-    ))
-}
-
-fn tab_bar(tab: Tab) -> impl View<color::Space, Tab> + use<> {
-    HStack::new((
-        tab_item("Brew", tab == Tab::Brew, |tab: &mut Tab| {
-            *tab = Tab::Brew;
-        }),
-        tab_item("Clean", tab == Tab::Clean, |tab: &mut Tab| {
-            *tab = Tab::Clean;
-        }),
-        tab_item("Settings", tab == Tab::Settings, |tab: &mut Tab| {
-            *tab = Tab::Settings;
-        }),
-    ))
-    .fixed_size(false, true)
-    .animated(Animation::linear(Duration::from_millis(125)), tab)
-}
-
-fn tab_item<C, F: Fn(&mut C)>(
-    name: &'static str,
-    is_selected: bool,
-    on_tap: F,
-) -> impl View<color::Space, C> + use<C, F> {
-    let (text_color, bar_height) = if is_selected {
-        (color::ACCENT, 4)
-    } else {
-        (color::FOREGROUND_SECONDARY, 0)
-    };
-
-    Button::new(on_tap, move |is_pressed: bool| {
-        VStack::new((
-            ZStack::new((
-                if_view!((is_selected || is_pressed) {
-                    Rectangle.foreground_color(color::BACKGROUND_SECONDARY)
-                }),
-                VStack::new((
-                    Circle.frame().with_width(15),
-                    Text::new(name, &*font::CAPTION),
-                ))
-                .with_spacing(spacing::ELEMENT)
-                .padding(Edges::All, spacing::ELEMENT)
-                .hint_background_color(if is_selected || is_pressed {
-                    color::BACKGROUND_SECONDARY
-                } else {
-                    color::BACKGROUND
-                }),
-            )),
-            Rectangle.frame().with_height(bar_height),
-        ))
-        .foreground_color(text_color)
-        .flex_frame()
-        .with_min_width(100)
-    })
-}
-
-fn brew_tab<C>(_state: &AppState) -> impl View<color::Space, C> + use<C> {
-    ScrollView::new(
-        VStack::new((
-            Text::new("Good morning", &*font::HEADING),
-            Text::new(
-                "You can't brew coffee in a simulator, but you can pretend.",
-                &*font::BODY,
-            )
-            .multiline_text_alignment(HorizontalTextAlignment::Center),
-        ))
-        .with_spacing(spacing::COMPONENT)
-        .with_alignment(HorizontalAlignment::Center)
-        .flex_infinite_width(HorizontalAlignment::Center)
-        .padding(Edges::All, spacing::SECTION_MARGIN)
-        .foreground_color(color::Space::WHITE),
-    )
-    .with_direction(ScrollDirection::Both)
-}
-
-fn settings_tab(state: &AppState) -> impl View<color::Space, AppState> + use<> {
-    ScrollView::new(
-        VStack::new((
-            toggle_text(
-                "Auto brew",
-                state.auto_brew,
-                "Automatically brew coffee at 7am",
-                true,
-                |state: &mut AppState| {
-                    state.auto_brew = !state.auto_brew;
-                },
-            ),
-            toggle_text(
-                "Stop on weight",
-                state.stop_on_weight,
-                "Stop the machine automatically when the target weight is reached",
-                false,
-                |state: &mut AppState| {
-                    state.stop_on_weight = !state.stop_on_weight;
-                },
-            ),
-            toggle_text(
-                "Auto off",
-                state.auto_off,
-                "The display will go to sleep after 5 minutes of inactivity",
-                true,
-                |state: &mut AppState| {
-                    state.auto_off = !state.auto_off;
-                },
-            ),
-        ))
-        .with_spacing(spacing::COMPONENT)
-        .with_alignment(HorizontalAlignment::Trailing)
-        .padding(Edges::All, spacing::SECTION_MARGIN)
-        .animated(Animation::linear(Duration::from_millis(200)), state.clone()),
-    )
-    .with_overlapping_bar(true) // we already applied padding
-}
-
-fn toggle_text<C>(
-    label: &'static str,
-    is_on: bool,
-    description: &'static str,
-    hides_description: bool,
-    action: fn(&mut C),
-) -> impl View<color::Space, C> + use<C> {
-    VStack::new((
-        HStack::new((
-            Text::new(label, &*font::BODY).foreground_color(color::Space::WHITE),
-            toggle_button(is_on, action),
-        ))
-        .with_spacing(spacing::ELEMENT),
-        if_view!((is_on || !hides_description) {
-            Text::new(description, &*font::CAPTION)
-                .multiline_text_alignment(HorizontalTextAlignment::Trailing)
-                .foreground_color(color::Space::WHITE)
-                .transition(Move::new(Edge::Trailing))
-        }),
-    ))
-    .with_spacing(spacing::ELEMENT)
-    .with_alignment(HorizontalAlignment::Trailing)
-    .flex_infinite_width(HorizontalAlignment::Trailing)
-}
-
-fn toggle_button<C>(is_on: bool, on_tap: fn(&mut C)) -> impl View<color::Space, C> + use<C> {
-    let (color, alignment) = if is_on {
-        (color::ACCENT, HorizontalAlignment::Trailing)
-    } else {
-        (color::Space::CSS_LIGHT_GRAY, HorizontalAlignment::Leading)
-    };
-
-    Button::new(on_tap, move |is_pressed: bool| {
-        ZStack::new((
-            buoyant::view::shape::Capsule.foreground_color(color),
-            buoyant::view::shape::Circle
-                .foreground_color(if is_pressed {
-                    color::Space::CSS_LIGHT_GRAY
-                } else {
-                    color::Space::WHITE
-                })
-                .scale_effect(if is_pressed { 1.5 } else { 1.0 }, UnitPoint::center())
-                .padding(Edges::All, 2)
-                .animated(
-                    Animation::ease_out(Duration::from_millis(500)),
-                    (is_on, is_pressed),
-                ),
-        ))
-        .with_horizontal_alignment(alignment)
-        .frame_sized(50, 25)
-        .geometry_group()
-    })
 }

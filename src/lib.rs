@@ -54,21 +54,13 @@
 use std::{cell::RefCell, rc::Rc};
 
 use autons::Selector;
-use buoyant::{
-    color,
-    render_target::{EmbeddedGraphicsRenderTarget, RenderTarget},
-    view::AsDrawable,
-};
-use embedded_graphics::{
-    geometry::OriginDimensions as _, pixelcolor::Rgb888, prelude::RgbColor, Drawable,
-};
 use vexide::{
     display::Display,
     task::{self, Task},
 };
 
+mod driver;
 mod route;
-mod touch;
 mod view;
 
 pub use route::*;
