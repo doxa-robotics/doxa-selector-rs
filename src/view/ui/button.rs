@@ -72,4 +72,5 @@ pub fn button<'a, C: 'a>(
             )
             .animated(Animation::ease_out(style.animation_duration), is_pressed)
     })
+    .geometry_group()
 }
