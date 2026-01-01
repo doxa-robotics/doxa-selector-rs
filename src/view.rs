@@ -6,7 +6,11 @@
 //! To run this example using the `embedded_graphics` simulator, you must have the `sdl2` package installed.
 //! See [SDL2](https://github.com/Rust-SDL2/rust-sdl2) for installation instructions.
 
-use std::time::{Duration, Instant};
+use std::{
+    cell::RefCell,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 
 use buoyant::{
     environment::DefaultEnvironment,
@@ -16,7 +20,6 @@ use buoyant::{
     render_target::{EmbeddedGraphicsRenderTarget, RenderTarget as _},
     view::prelude::*,
 };
-use embedded_graphics::prelude::*;
 use embedded_touch::traits::TouchInputDevice;
 use unwrap_infallible::UnwrapInfallible;
 
@@ -48,7 +51,10 @@ const MIN_FRAME_GAP: Duration = Duration::from_millis(5);
 /// Time before we stop rendering due to inactivity
 const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(5);
 
-pub async fn run(display: vexide::display::Display) {
+pub async fn run<C: crate::route::Category, R>(
+    display: vexide::display::Display,
+    external: Rc<RefCell<crate::ExternalState<C, R>>>,
+) {
     // DISPLAY RENDERING SETUP
 
     // Initialize display driver, which maps DrawTarget calls to the vexide Display API
@@ -76,7 +82,7 @@ pub async fn run(display: vexide::display::Display) {
     let app_start = Instant::now();
 
     // Initial application state
-    let mut app_data = AppState::default();
+    let mut app_data = AppState::new(external);
 
     // Create the initial view and state
     let mut view = root_view(&app_data);
@@ -130,9 +136,9 @@ pub async fn run(display: vexide::display::Display) {
         let synthetic_events = {
             let current_external = app_data.external.borrow();
             let mut events = Vec::new();
-            if *current_external != external_state {
+            if !current_external.soft_eq(&external_state) {
                 events.push(Event::External);
-                external_state = current_external.clone();
+                external_state = app_data.external.borrow().clone();
             }
             events
         };

@@ -3,7 +3,9 @@ use embedded_graphics::prelude::RgbColor as _;
 
 use crate::view::{color, font, spacing, ui::AppState};
 
-pub fn select_screen<C>(_state: &AppState) -> impl View<color::Color, C> + use<C> {
+pub fn select_screen<Captures, C: crate::Category, R: 'static>(
+    _state: &AppState<C, R>,
+) -> impl View<color::Color, Captures> {
     ScrollView::new(
         VStack::new((
             Text::new("Good morning", &*font::HEADING),

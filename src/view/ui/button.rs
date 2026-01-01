@@ -1,17 +1,11 @@
 use std::time::Duration;
 
-use buoyant::{
-    if_view,
-    primitives::UnitPoint,
-    transition::{Edge, Move},
-    view::prelude::*,
-};
-use embedded_graphics::prelude::{RgbColor as _, WebColors as _};
+use buoyant::{primitives::UnitPoint, view::prelude::*};
 use embedded_ttf::FontTextStyle;
 
 use crate::view::{
     color::{self, Color},
-    font, spacing,
+    font,
 };
 
 pub struct ButtonStyle<'a> {

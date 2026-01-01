@@ -1,27 +1,30 @@
 use std::{cell::RefCell, rc::Rc};
 
 use buoyant::{match_view, view::prelude::*};
-use embedded_graphics::prelude::WebColors as _;
 
-use crate::view::{color, font, spacing};
+use crate::ExternalState;
 
 mod bottom_bar;
 mod button;
 mod select_screen;
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub(super) struct AppState {
+#[derive(Debug, Clone)]
+pub(super) struct AppState<C: crate::route::Category, R: 'static> {
     pub screen: Screen,
 
-    pub external: Rc<RefCell<ExternalAppState>>,
+    pub external: Rc<RefCell<ExternalState<C, R>>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct ExternalAppState {
-    pub calibrating: bool,
+impl<C: crate::route::Category, R> AppState<C, R> {
+    pub fn new(external: Rc<RefCell<ExternalState<C, R>>>) -> Self {
+        Self {
+            screen: Screen::default(),
+            external,
+        }
+    }
 }
 
-impl AppState {
+impl<C: crate::route::Category, R> AppState<C, R> {
     pub fn calibrate(&mut self) {
         self.external.borrow_mut().calibrating = true;
         let self_external = self.external.clone();
@@ -40,9 +43,9 @@ pub(super) enum Screen {
     SelectRoute,
 }
 
-pub(super) fn root_view(
-    state: &AppState,
-) -> impl View<crate::view::color::Color, AppState> + use<> {
+pub(super) fn root_view<C: crate::route::Category, R>(
+    state: &AppState<C, R>,
+) -> impl View<crate::view::color::Color, AppState<C, R>> {
     VStack::new((
         match_view!(state.screen, {
             Screen::SelectCategory => {

@@ -65,10 +65,31 @@ mod view;
 
 pub use route::*;
 
-struct SelectorState<C: Category, R: 'static, const N: usize> {
-    routes: [Route<C, R>; N],
-    categories: Vec<C>,
+#[derive(Debug)]
+struct ExternalState<C: Category, R: 'static> {
+    calibrating: bool,
+
+    routes: Rc<Vec<Route<C, R>>>,
+    categories: Rc<Vec<C>>,
     selection: usize,
+}
+
+impl<C: Category, R: 'static> Clone for ExternalState<C, R> {
+    fn clone(&self) -> Self {
+        Self {
+            calibrating: self.calibrating,
+            routes: self.routes.clone(),
+            categories: self.categories.clone(),
+            selection: self.selection,
+        }
+    }
+}
+
+impl<C: Category, R: 'static> ExternalState<C, R> {
+    /// Soft equality check that ignores the Rc'd fields.
+    pub fn soft_eq(&self, other: &Self) -> bool {
+        self.calibrating == other.calibrating && self.selection == other.selection
+    }
 }
 
 /// Simple touchscreen-based autonomous route selector.
@@ -84,14 +105,14 @@ struct SelectorState<C: Category, R: 'static, const N: usize> {
 /// trait if using vexide's competition runtime.
 ///
 /// [`SelectCompete`]: crate::compete::SelectCompete
-pub struct DoxaSelect<C: Category, R: 'static, const N: usize> {
-    state: Rc<RefCell<SelectorState<C, R, N>>>,
+pub struct DoxaSelect<C: Category, R: 'static> {
+    state: Rc<RefCell<ExternalState<C, R>>>,
     _task: Task<()>,
 }
 
-impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
+impl<C: Category, R> DoxaSelect<C, R> {
     /// Creates a new selector from a [`Display`] peripheral and array of routes.
-    pub fn new(display: Display, routes: [Route<C, R>; N]) -> Self {
+    pub fn new<const N: usize>(display: Display, routes: [Route<C, R>; N]) -> Self {
         const {
             assert!(N > 0, "DoxaSelect requires at least one route.");
         }
@@ -106,29 +127,29 @@ impl<C: Category, R, const N: usize> DoxaSelect<C, R, N> {
             cats
         };
 
-        let state = Rc::new(RefCell::new(SelectorState {
-            routes,
-            categories,
+        let state = Rc::new(RefCell::new(ExternalState {
+            routes: Rc::new(routes.to_vec()),
+            categories: Rc::new(categories),
             selection: 0,
+            calibrating: false,
         }));
 
         Self {
             state: state.clone(),
             _task: task::spawn(async move {
-                view::run(display).await;
+                view::run(display, state).await;
             }),
         }
     }
 
     /// Programatically selects an autonomous route by index.
     pub fn select(&mut self, index: usize) {
-        assert!(index < N, "Invalid route selection index.");
         let mut state = self.state.borrow_mut();
         state.selection = index;
     }
 }
 
-impl<C: Category, R, const N: usize> Selector<R> for DoxaSelect<C, R, N> {
+impl<C: Category, R> Selector<R> for DoxaSelect<C, R> {
     async fn run(&self, robot: &mut R) {
         {
             let state = self.state.borrow();
