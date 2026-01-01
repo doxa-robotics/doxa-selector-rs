@@ -37,9 +37,9 @@ pub fn toggle_text<C>(
 
 pub fn toggle_button<C>(is_on: bool, on_tap: fn(&mut C)) -> impl View<color::Color, C> + use<C> {
     let (color, alignment) = if is_on {
-        (color::ACCENT, HorizontalAlignment::Trailing)
+        (color::M3_PRIMARY, HorizontalAlignment::Trailing)
     } else {
-        (color::Color::CSS_LIGHT_GRAY, HorizontalAlignment::Leading)
+        (color::M3_ON_PRIMARY, HorizontalAlignment::Leading)
     };
 
     Button::new(on_tap, move |is_pressed: bool| {
@@ -47,9 +47,9 @@ pub fn toggle_button<C>(is_on: bool, on_tap: fn(&mut C)) -> impl View<color::Col
             buoyant::view::shape::Capsule.foreground_color(color),
             buoyant::view::shape::Circle
                 .foreground_color(if is_pressed {
-                    color::Color::CSS_LIGHT_GRAY
+                    color::M3_ON_PRIMARY
                 } else {
-                    color::Color::WHITE
+                    color::M3_PRIMARY
                 })
                 .scale_effect(if is_pressed { 1.5 } else { 1.0 }, UnitPoint::center())
                 .padding(Edges::All, 2)

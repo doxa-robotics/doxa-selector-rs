@@ -64,7 +64,7 @@ pub async fn run(display: vexide::display::Display) {
     display.set_render_mode(vexide::display::RenderMode::DoubleBuffered);
     // Create a new buoyant render target
     let mut target =
-        EmbeddedGraphicsRenderTarget::new_hinted(&mut display_driver, color::BACKGROUND);
+        EmbeddedGraphicsRenderTarget::new_hinted(&mut display_driver, color::M3_BACKGROUND);
 
     // DISPLAY TOUCH SETUP
     let mut touch_display = unsafe { vexide::display::Display::new() };
@@ -107,13 +107,13 @@ pub async fn run(display: vexide::display::Display) {
                 &mut target,
                 source_tree,
                 target_tree,
-                &color::Color::RED,
+                &color::M3_PRIMARY_CONTAINER,
                 &domain,
             );
             // Flush the rendered frame to the display
             display.render();
             // Clear the render target for the next frame
-            target.clear(color::Color::BLACK);
+            target.clear(color::M3_BACKGROUND);
         }
 
         // Handle events
