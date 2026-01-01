@@ -2,13 +2,14 @@ use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use buoyant::{match_view, view::prelude::*};
 
-use crate::{ExternalState, Route};
+use crate::{view::ui::select_category_screen::select_category_screen, ExternalState, Route};
 
 mod bottom_bar;
 mod button;
 mod calibrating_overlay;
 mod card;
-mod select_screen;
+mod select_category_screen;
+mod selector;
 
 #[derive(Debug, Clone)]
 pub(super) struct AppData<C: crate::route::Category, R: 'static> {
@@ -75,7 +76,7 @@ pub(super) fn root_view<'a, C: crate::route::Category, R: 'static>(
         VStack::new((
             match_view!(state.screen, {
                 Screen::SelectCategory => {
-                    select_screen::select_screen(state, data)
+                    select_category_screen::select_category_screen(data)
                 },
                 Screen::SelectRoute(_category_index) => {
                     EmptyView
