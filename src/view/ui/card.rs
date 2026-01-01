@@ -17,6 +17,9 @@ pub struct CardStyle<'a> {
     pub background_pressed: color::Color,
     pub foreground_pressed: color::Color,
 
+    pub border_width: u32,
+    pub border_color: color::Color,
+
     pub animation_duration: Duration,
 
     pub text_style: &'a FontTextStyle<Color>,
@@ -26,49 +29,59 @@ impl Default for CardStyle<'_> {
     fn default() -> Self {
         Self {
             height: 24,
-            padding: 12,
+            padding: 16,
             radius: 16,
-            background: color::M3_SECONDARY_CONTAINER,
-            foreground: color::M3_ON_SECONDARY_CONTAINER,
-            background_pressed: color::M3_SECONDARY_CONTAINER,
-            foreground_pressed: color::M3_ON_SECONDARY_CONTAINER,
+            border_width: 1,
+            border_color: color::M3_OUTLINE,
+            background: color::M3_BACKGROUND,
+            foreground: color::M3_ON_BACKGROUND,
+            background_pressed: color::M3_SURFACE_CONTAINER,
+            foreground_pressed: color::M3_ON_SURFACE,
             animation_duration: Duration::from_millis(200),
-            text_style: &*font::CAPTION,
+            text_style: &*font::BODY,
         }
     }
 }
 
-pub fn card<'a, C: 'a>(
+pub fn card<'a, C: 'a, OnTapFn>(
     label: &'a str,
     style: CardStyle<'a>,
-    on_tap: fn(&mut C),
-) -> impl View<color::Color, C> + 'a {
+    on_tap: OnTapFn,
+) -> impl View<color::Color, C> + 'a
+where
+    OnTapFn: Fn(&mut C) + 'a,
+{
     Button::new(on_tap, move |is_pressed: bool| {
-        Text::new(label, style.text_style)
-            .foreground_color(if is_pressed {
-                style.foreground_pressed
-            } else {
-                style.foreground
-            })
-            .hint_background_color(if is_pressed {
-                style.background_pressed
-            } else {
-                style.background
-            })
-            .padding(Edges::All, style.padding)
-            .flex_frame()
-            .with_min_height(style.height)
-            .background(
-                Alignment::Center,
-                RoundedRectangle::new(style.radius)
-                    .foreground_color(if is_pressed {
-                        style.background_pressed
-                    } else {
-                        style.background
-                    })
-                    .scale_effect(if is_pressed { 0.9 } else { 1.0 }, UnitPoint::center())
-                    .animated(Animation::ease_out(style.animation_duration), is_pressed),
-            )
-            .animated(Animation::ease_out(style.animation_duration), is_pressed)
+        ZStack::new((
+            RoundedRectangle::new(style.radius)
+                .foreground_color(if is_pressed {
+                    style.background_pressed
+                } else {
+                    style.background
+                })
+                .padding(Edges::All, style.border_width)
+                .background_color(
+                    style.border_color,
+                    RoundedRectangle::new(style.radius + style.border_width as u16),
+                )
+                .scale_effect(if is_pressed { 0.9 } else { 1.0 }, UnitPoint::center())
+                .animated(Animation::ease_out(style.animation_duration), is_pressed),
+            Text::new(label, style.text_style)
+                .foreground_color(if is_pressed {
+                    style.foreground_pressed
+                } else {
+                    style.foreground
+                })
+                .hint_background_color(if is_pressed {
+                    style.background_pressed
+                } else {
+                    style.background
+                })
+                .padding(Edges::All, style.padding)
+                .flex_frame()
+                .with_min_height(style.height),
+        ))
+        .animated(Animation::ease_out(style.animation_duration), is_pressed)
     })
+    .geometry_group()
 }
