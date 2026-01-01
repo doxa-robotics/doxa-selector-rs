@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use buoyant::{match_view, view::prelude::*};
 
@@ -64,23 +64,27 @@ impl AppState {
 pub(super) enum Screen {
     #[default]
     SelectCategory,
-    SelectRoute,
+    SelectRoute(usize),
 }
 
-pub(super) fn root_view<'a, 'b, C: crate::route::Category, R: 'static>(
-    state: &'a AppState,
-    data: &'b AppData<C, R>,
-) -> impl View<crate::view::color::Color, AppState> + use<'b, C, R> {
+pub(super) fn root_view<'a, C: crate::route::Category, R: 'static>(
+    state: &AppState,
+    data: &'a AppData<C, R>,
+) -> impl View<crate::view::color::Color, AppState> + use<'a, C, R> {
     ZStack::new((
         VStack::new((
             match_view!(state.screen, {
                 Screen::SelectCategory => {
                     select_screen::select_screen(state, data)
                 },
-                Screen::SelectRoute => {
-                    select_screen::select_screen(state, data)
+                Screen::SelectRoute(_category_index) => {
+                    EmptyView
                 }
-            }),
+            })
+            .animated(
+                Animation::ease_in_out(Duration::from_millis(400)),
+                state.screen,
+            ),
             bottom_bar::bottom_bar(state),
         )),
         calibrating_overlay::calibrating_overlay(state),

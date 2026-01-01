@@ -1,53 +1,4 @@
-//! Simple touchscreen-based autonomous route selector.
-//!
-//! ![Screenshot of the `SimpleSelect` menu showing two routes](https://i.imgur.com/qM9qMsd.png)
-//!
-//! [`SimpleSelect`] is a barebones and lightweight autonomous selector that allows picking
-//! between at most 12 autonomous routes using the V5 Brain's display and touchscreen.
-//!
-//! The selector provides a user interface that mimicks the appearance of other VEXos
-//! dashboards, with basic support for color themes through the [`SimpleSelect::new_with_theme`]
-//! function.
-//!
-//! # Examples
-//!
-//! Robot with two autonomous routes using [`SelectCompete`](crate::compete::SelectCompete).
-//!
-//! ```
-//! use vexide::prelude::*;
-//! use autons::{
-//!     prelude::*,
-//!     simple::{route, SimpleSelect},
-//! };
-//!
-//! struct Robot {}
-//!
-//! impl Robot {
-//!     async fn route_1(&mut self) {}
-//!     async fn route_2(&mut self) {}
-//! }
-//!
-//! impl SelectCompete for Robot {
-//!     async fn driver(&mut self) {
-//!         // ...
-//!     }
-//! }
-//!
-//! #[vexide::main]
-//! async fn main(peripherals: Peripherals) {
-//!     let robot = Robot {};
-//!
-//!     robot
-//!         .compete(SimpleSelect::new(
-//!             peripherals.display,
-//!             [
-//!                 route!("Route 1", Robot::route_1),
-//!                 route!("Route 2", Robot::route_2),
-//!             ],
-//!         ))
-//!         .await;
-//! }
-//! ```
+//! Touchscreen-based autonomous route selector for VEX V5 robots.
 #![feature(trait_alias)]
 #![feature(never_type)]
 
@@ -65,7 +16,7 @@ mod view;
 
 pub use route::*;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 struct ExternalState {
     calibrating: bool,
 
@@ -124,7 +75,7 @@ impl<C: Category, R> DoxaSelect<C, R> {
         }
     }
 
-    /// Programatically selects an autonomous route by index.
+    /// Programmatically selects an autonomous route by index.
     pub fn select(&mut self, index: usize) {
         let mut state = self.state.borrow_mut();
         state.selection = index;

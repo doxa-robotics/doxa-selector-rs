@@ -72,4 +72,5 @@ macro_rules! route {
         }
     }};
 }
+#[allow(unused)]
 pub use route;

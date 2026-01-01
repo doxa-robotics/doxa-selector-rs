@@ -26,7 +26,7 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
             "Diagnostics",
             ButtonStyle::default(),
             |state: &mut AppState| {
-                state.screen = crate::view::ui::Screen::SelectRoute;
+                state.screen = crate::view::ui::Screen::SelectCategory;
             },
         ),
     ))
@@ -36,8 +36,4 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
     .background_color(color::M3_SURFACE_CONTAINER_HIGHEST, Capsule)
     .padding(Edges::Horizontal, spacing::EDGE)
     .padding(Edges::Bottom, spacing::EDGE)
-    .animated(
-        Animation::linear(Duration::from_millis(800)),
-        state.external.borrow().calibrating,
-    )
 }

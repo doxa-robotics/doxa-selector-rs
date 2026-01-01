@@ -1,4 +1,7 @@
-use buoyant::view::{prelude::*, scroll_view::ScrollDirection};
+use buoyant::{
+    match_view,
+    view::{prelude::*, scroll_view::ScrollDirection},
+};
 use embedded_graphics::prelude::RgbColor as _;
 
 use crate::view::{
@@ -14,18 +17,51 @@ pub fn select_screen<'b, C: crate::Category, R: 'static>(
         VStack::new((
             Text::new("Select category", &*font::HEADING),
             ForEach::<12>::new_vertical(
-                &data.category_names,
-                |(index, category_name): &(usize, String)| {
-                    crate::view::ui::card::card(
-                        category_name,
+                // It's a bit hacky, but it works.
+                // To split the categories into two columns, we tell buoyant that
+                // there are only half the number of categories, and then we index
+                // into the original list to get the correct category names.
+                &data.category_names[0..(data.category_names.len().div_ceil(2))],
+                move |(index, _): &(usize, String)| {
+                    let category_name_1 = &data.category_names[*index * 2].1;
+                    // We're not guaranteed to have a second category if the number of categories is odd
+                    let category_name_2 = data
+                        .category_names
+                        .get(*index * 2 + 1)
+                        .map(|(_, name)| name);
+
+                    let card_1 = crate::view::ui::card::card(
+                        category_name_1,
                         crate::view::ui::card::CardStyle::default(),
                         move |state: &mut AppState| {
-                            // TODO: we need to use a Lens to correctly update the state to the right category
-                            state.screen = crate::view::ui::Screen::SelectRoute;
+                            state.screen = crate::view::ui::Screen::SelectRoute(*index * 2);
                         },
                     )
+                    .flex_frame()
+                    .with_ideal_height(56);
+                    HStack::new((
+                        card_1, 
+                        match_view!(category_name_2, {
+                            Some(category_name_2) => {
+                                let card_2 = crate::view::ui::card::card(
+                                    category_name_2,
+                                    crate::view::ui::card::CardStyle::default(),
+                                    move |state: &mut AppState| {
+                                        state.screen = crate::view::ui::Screen::SelectRoute(*index * 2 + 1);
+                                    },
+                                )
+                                .flex_frame()
+                                .with_ideal_height(56);
+                                card_2
+                            },
+                            None => {
+                                Spacer::default().flex_frame()
+                            },
+                        })
+                    )).with_spacing(spacing::COMPONENT)
                 },
-            ),
+            )
+            .with_spacing(spacing::COMPONENT),
         ))
         .with_spacing(spacing::COMPONENT)
         .with_alignment(HorizontalAlignment::Center)
