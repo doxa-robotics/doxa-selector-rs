@@ -1,9 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Duration};
 
-use buoyant::{
-    transition::{Move, Slide},
-    view::prelude::*,
-};
+use buoyant::{transition::Move, view::prelude::*};
 
 use crate::{ExternalState, Route};
 
@@ -97,13 +94,12 @@ pub(super) fn root_view<'a>(
             // conditional rendering.
             ZStack::new((
                 matches!(state.screen, Screen::SelectCategory).then(|| {
-                    select_category_screen::select_category_screen(data)
-                        .transition(Slide::trailing())
+                    select_category_screen::select_category_screen(data).transition(Move::leading())
                 }),
                 match state.screen {
                     Screen::SelectRoute(category_index) => Some(
                         select_route_screen::select_route_screen(data, category_index)
-                            .transition(Slide::trailing()),
+                            .transition(Move::trailing()),
                     ),
                     _ => None,
                 },
