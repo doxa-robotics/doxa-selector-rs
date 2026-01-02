@@ -20,8 +20,6 @@ pub use route::*;
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 struct ExternalState {
     calibrating: bool,
-    show_calibrating: bool,
-    show_diagnostics: bool,
     selection: usize,
 }
 
@@ -104,8 +102,6 @@ impl<C: Category, R> DoxaSelect<C, R> {
 
         let state = Rc::new(RefCell::new(ExternalState {
             selection: 0,
-            show_diagnostics: interface.diagnostics_enable(),
-            show_calibrating: interface.calibrating_enable(),
             calibrating: if interface.calibrating_enable() {
                 *interface.calibrating_calibrating().borrow()
             } else {

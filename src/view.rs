@@ -110,9 +110,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
         {
             let interface = app_state.interface.as_ref();
             let mut external = app_state.external.borrow_mut();
-            external.show_calibrating = interface.calibrating_enable();
-            external.show_diagnostics = interface.diagnostics_enable();
-            if external.show_calibrating {
+            if interface.calibrating_enable() {
                 external.calibrating = *interface.calibrating_calibrating().borrow();
             } else {
                 external.calibrating = false;

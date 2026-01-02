@@ -26,6 +26,7 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
     );
 
     let len = diagnostics.len();
+    let compact = state.interface.diagnostics_compact();
 
     ScrollView::new(
         VStack::new((
@@ -44,20 +45,37 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
                 move |i| {
                     let (key, value) = diagnostics[*i as usize].clone();
                     HStack::new((
-                        Text::new(key, &*crate::view::font::BODY)
-                            .foreground_color(color::M3_ON_SURFACE),
+                        Text::new(
+                            key,
+                            if compact {
+                                &*crate::view::font::CAPTION
+                            } else {
+                                &*crate::view::font::BODY
+                            },
+                        )
+                        .foreground_color(color::M3_ON_SURFACE),
                         Spacer::default(),
-                        Text::new(value, &*crate::view::font::BODY)
-                            .foreground_color(color::M3_ON_SURFACE_VARIANT),
+                        Text::new(
+                            value,
+                            if compact {
+                                &*crate::view::font::CAPTION
+                            } else {
+                                &*crate::view::font::BODY
+                            },
+                        )
+                        .foreground_color(color::M3_ON_SURFACE_VARIANT),
                     ))
-                    .padding(buoyant::view::prelude::Edges::All, spacing::ELEMENT)
+                    .padding(
+                        buoyant::view::prelude::Edges::All,
+                        if compact { 4 } else { spacing::ELEMENT },
+                    )
                     .background_color(
                         color::M3_SURFACE_CONTAINER_HIGHEST,
-                        RoundedRectangle::new(12),
+                        RoundedRectangle::new(if compact { 8 } else { 12 }),
                     )
                 },
             )
-            .with_spacing(spacing::LIST_ITEM),
+            .with_spacing(if compact { 2 } else { spacing::LIST_ITEM }),
         ))
         .with_spacing(spacing::ELEMENT)
         .padding(buoyant::view::prelude::Edges::All, spacing::SECTION_MARGIN)
@@ -66,7 +84,7 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
     )
     .with_direction(ScrollDirection::Vertical)
     .with_overlapping_bar(true)
-    .with_bar_visibility(if len > 4 {
+    .with_bar_visibility(if len > if compact { 5 } else { 3 } {
         buoyant::view::scroll_view::ScrollBarVisibility::Always
     } else {
         buoyant::view::scroll_view::ScrollBarVisibility::Never
