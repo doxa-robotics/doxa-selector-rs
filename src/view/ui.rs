@@ -19,9 +19,12 @@ mod selector;
 
 /// Application data shared across views.
 ///
-/// Will not change after initialization.
+/// Will not change after initialization and is intended to be created once and
+/// shared by reference for the duration of the program.
 ///
-/// Clone is intentionally not implemented because this is a large data structure
+/// `Clone` is intentionally not implemented to make this shared-ownership model
+/// explicit and to avoid accidentally duplicating the application data, which
+/// is costly in terms of memory.
 #[derive(Debug)]
 pub(super) struct AppData {
     /// Vec<(category_index, category_name, category_index)>

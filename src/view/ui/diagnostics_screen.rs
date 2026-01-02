@@ -19,10 +19,10 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
     let diagnostics = state
         .diagnostics
         .clone()
-        .expect("Diagnostics should be Some when in diagnostics screen");
+        .expect("diagnostics should be Some when in diagnostics screen");
     assert!(
         diagnostics.len() <= 16,
-        "Diagnostics should be less or equal to than 16 lines"
+        "diagnostics data exceeds maximum of 16 entries"
     );
 
     let len = diagnostics.len();

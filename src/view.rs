@@ -60,8 +60,8 @@ pub async fn run<C: crate::route::Category, R: 'static>(
     // Initialize another display to use for refreshing the screen
     let mut display = unsafe {
         // SAFETY: Technically, creating multiple Display instances is not good,
-        // but in practice, the VEX SDK operates doesn't specify what a "display"
-        // instance itself is, so creating multiple instances that all refer to the
+        // but in practice, the VEX SDK doesn't specify what a "display" instance
+        // itself is, so creating multiple instances that all refer to the
         // same underlying hardware is okay.
         vexide::display::Display::new()
     };

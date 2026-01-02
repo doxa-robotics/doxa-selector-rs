@@ -34,11 +34,11 @@ pub trait DoxaSelectInterface {
     }
     /// Starts the calibration process.
     fn calibrating_calibrate(&mut self) {
-        panic!("You must implement calibrating_calibrate if calibrating_enable returns true.");
+        panic!("when calibrating ui is enabled, you must implement calibrating_calibrate");
     }
     /// Returns a Rc<RefCell<bool>> that indicates whether calibration is in progress.
     fn calibrating_calibrating(&self) -> Rc<RefCell<bool>> {
-        panic!("You must implement calibrating_calibrating if calibrating_enable returns true.");
+        panic!("when calibrating ui is enabled, you must implement calibrating_calibrating to return the calibration state");
     }
 
     /// Whether the diagnostics screen is enabled.
@@ -52,7 +52,7 @@ pub trait DoxaSelectInterface {
     ///
     /// There is a maximum of 16 entries.
     fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
-        panic!("You must implement diagnostics_diagnostics if diagnostics_enable returns true.");
+        panic!("when diagnostics ui is enabled, you must implement diagnostics_diagnostics to return diagnostics");
     }
     /// Whether the diagnostics screen should use a compact layout.
     fn diagnostics_compact(&self) -> bool {
@@ -60,19 +60,13 @@ pub trait DoxaSelectInterface {
     }
 }
 
-/// Simple touchscreen-based autonomous route selector.
+/// Touchscreen-based autonomous route selector with animations and Material 3
+/// design.
 ///
-/// `SimpleSelect` is a barebones and lightweight autonomous selector that allows picking
-/// between up to 16 autonomous routes using the V5 brain's display and touchscreen.
+/// This struct implements the [`Selector`] trait and can be used with the `autons`
+/// [`SelectCompete`] trait if using vexide's competition runtime.
 ///
-/// The selector provides a user interface that mimicks the appearance of other VEXos
-/// dashboards, with basic support for color themes through the [`SimpleSelect::new_with_theme`]
-/// function.
-///
-/// This struct implements the [`Selector`] trait and should be used with the [`SelectCompete`]
-/// trait if using vexide's competition runtime.
-///
-/// [`SelectCompete`]: crate::compete::SelectCompete
+/// [`SelectCompete`]: autons::compete::SelectCompete
 pub struct DoxaSelect<C: Category, R: 'static> {
     state: Rc<RefCell<ExternalState>>,
     routes: Vec<Route<C, R>>,

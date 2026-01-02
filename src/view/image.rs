@@ -46,7 +46,7 @@ pub static LOGO_CROPPED: LazyLock<Option<Bmp<color::Color>>> =
         Some(raw) => match Bmp::from_slice(raw) {
             Ok(bmp) => Some(bmp),
             Err(e) => {
-                println!("Failed to parse logo-cropped.bmp as BMP image: {:?}", e);
+                log::error!("Failed to parse logo-cropped.bmp as BMP image: {:?}", e);
                 None
             }
         },
