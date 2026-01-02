@@ -49,6 +49,7 @@ const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(1);
 pub async fn run<C: crate::route::Category, R: 'static>(
     display: vexide::display::Display,
     external: Rc<RefCell<crate::ExternalState>>,
+    interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
     routes: Vec<crate::Route<C, R>>,
     categories: Vec<C>,
 ) {
@@ -79,7 +80,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
     let app_start = Instant::now();
 
     // Initial application state
-    let mut app_state = AppState::new(external);
+    let mut app_state = AppState::new(external, interface);
     let app_data = AppData::new(routes, categories);
 
     // Create the initial view and state
@@ -105,6 +106,15 @@ pub async fn run<C: crate::route::Category, R: 'static>(
     let mut should_render = true;
 
     loop {
+        // Update state
+        {
+            let interface = app_state.interface.borrow();
+            let mut external = app_state.external.borrow_mut();
+            external.show_calibrating = interface.calibrating_enable();
+            external.show_diagnostics = interface.diagnostics_enable();
+            external.calibrating = *interface.calibrating_calibrating().borrow();
+        }
+
         let frame_start = Instant::now();
 
         let mode = vexide::competition::mode();
@@ -153,7 +163,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
             let mut events = Vec::new();
             if *current_external != external_state {
                 events.push(Event::External);
-                external_state = app_state.external.borrow().clone();
+                external_state = current_external.clone();
             }
             if previous_mode != mode {
                 if mode == vexide::competition::CompetitionMode::Autonomous {

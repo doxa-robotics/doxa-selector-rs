@@ -55,31 +55,24 @@ impl AppData {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone)]
 pub(super) struct AppState {
     pub screen: Screen,
 
     pub external: Rc<RefCell<ExternalState>>,
+    pub interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
 }
 
 impl AppState {
-    pub fn new(external: Rc<RefCell<ExternalState>>) -> Self {
+    pub fn new(
+        external: Rc<RefCell<ExternalState>>,
+        interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
+    ) -> Self {
         Self {
             screen: Screen::default(),
             external,
+            interface,
         }
-    }
-}
-
-impl AppState {
-    pub fn calibrate(&mut self) {
-        let self_external = self.external.clone();
-        vexide::task::spawn(async move {
-            self_external.borrow_mut().calibrating = true;
-            vexide::time::sleep(std::time::Duration::from_secs(2)).await;
-            self_external.borrow_mut().calibrating = false;
-        })
-        .detach();
     }
 }
 

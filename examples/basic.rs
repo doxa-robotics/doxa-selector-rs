@@ -1,3 +1,5 @@
+use std::{cell::RefCell, rc::Rc};
+
 use autons::prelude::*;
 use doxa_selector::{route, DoxaSelect};
 use vexide::prelude::*;
@@ -50,6 +52,36 @@ impl Robot {
 
 impl SelectCompete for Robot {}
 
+struct DoxaSelectInterfaceImpl {
+    calibrating: Rc<RefCell<bool>>,
+}
+
+impl Default for DoxaSelectInterfaceImpl {
+    fn default() -> Self {
+        Self {
+            calibrating: Rc::new(RefCell::new(false)),
+        }
+    }
+}
+
+impl doxa_selector::DoxaSelectInterface for DoxaSelectInterfaceImpl {
+    fn calibrating_enable(&self) -> bool {
+        true
+    }
+    fn calibrating_calibrate(&mut self) {
+        *self.calibrating.borrow_mut() = true;
+        let calibrating = self.calibrating.clone();
+        vexide::task::spawn(async move {
+            vexide::time::sleep(std::time::Duration::from_secs(2)).await;
+            *calibrating.borrow_mut() = false;
+        })
+        .detach();
+    }
+    fn calibrating_calibrating(&self) -> std::rc::Rc<std::cell::RefCell<bool>> {
+        self.calibrating.clone()
+    }
+}
+
 #[vexide::main]
 async fn main(peripherals: Peripherals) {
     let robot = Robot {};
@@ -65,16 +97,17 @@ async fn main(peripherals: Peripherals) {
                     "My very very long description for route 2."
                 ),
                 route!(Category::Category3, Robot::route_1),
-                // route!(Category::Category4, Robot::route_2),
-                // route!(Category::Category5, Robot::route_1),
-                // route!(Category::Category6, Robot::route_2),
-                // route!(Category::Category7, Robot::route_1),
-                // route!(Category::Category8, Robot::route_2),
-                // route!(Category::Category9, Robot::route_1),
-                // route!(Category::Category10, Robot::route_2),
-                // route!(Category::Category11, Robot::route_1),
-                // route!(Category::Category12, Robot::route_2),
+                route!(Category::Category4, Robot::route_2),
+                route!(Category::Category5, Robot::route_1),
+                route!(Category::Category6, Robot::route_2),
+                route!(Category::Category7, Robot::route_1),
+                route!(Category::Category8, Robot::route_2),
+                route!(Category::Category9, Robot::route_1),
+                route!(Category::Category10, Robot::route_2),
+                route!(Category::Category11, Robot::route_1),
+                route!(Category::Category12, Robot::route_2),
             ],
+            DoxaSelectInterfaceImpl::default(),
         ))
         .await;
 }

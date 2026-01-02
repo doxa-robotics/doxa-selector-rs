@@ -16,11 +16,30 @@ mod view;
 
 pub use route::*;
 
+/// External state shared between the selector's UI and logic.
 #[derive(Debug, Clone, PartialEq, Eq, Ord, PartialOrd)]
 struct ExternalState {
     calibrating: bool,
-
+    show_calibrating: bool,
+    show_diagnostics: bool,
     selection: usize,
+}
+
+pub trait DoxaSelectInterface {
+    fn calibrating_enable(&self) -> bool {
+        false
+    }
+    fn calibrating_calibrate(&mut self) {}
+    fn calibrating_calibrating(&self) -> Rc<RefCell<bool>> {
+        Rc::new(RefCell::new(false))
+    }
+
+    fn diagnostics_enable(&self) -> bool {
+        false
+    }
+    fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
+        Vec::new()
+    }
 }
 
 /// Simple touchscreen-based autonomous route selector.
@@ -44,7 +63,11 @@ pub struct DoxaSelect<C: Category, R: 'static> {
 
 impl<C: Category, R> DoxaSelect<C, R> {
     /// Creates a new selector from a [`Display`] peripheral and array of routes.
-    pub fn new<const N: usize>(display: Display, routes: [Route<C, R>; N]) -> Self {
+    pub fn new<const N: usize>(
+        display: Display,
+        routes: [Route<C, R>; N],
+        interface: impl DoxaSelectInterface + 'static,
+    ) -> Self {
         const {
             assert!(N > 0, "DoxaSelect requires at least one route.");
         }
@@ -61,6 +84,8 @@ impl<C: Category, R> DoxaSelect<C, R> {
 
         let state = Rc::new(RefCell::new(ExternalState {
             selection: 0,
+            show_diagnostics: interface.diagnostics_enable(),
+            show_calibrating: interface.calibrating_enable(),
             calibrating: false,
         }));
 
@@ -68,7 +93,14 @@ impl<C: Category, R> DoxaSelect<C, R> {
             state: state.clone(),
             routes: routes.to_vec(),
             _task: task::spawn(async move {
-                view::run(display, state, routes.to_vec(), categories).await;
+                view::run(
+                    display,
+                    state,
+                    Rc::new(RefCell::new(interface)),
+                    routes.to_vec(),
+                    categories,
+                )
+                .await;
             }),
         }
     }

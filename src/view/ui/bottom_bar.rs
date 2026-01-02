@@ -22,35 +22,39 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
                 .foreground_color(color::M3_ON_SURFACE),
         }),
         Spacer::default(),
-        button::button(
-            "Calibrate",
-            ButtonStyle::default(),
-            |state: &mut AppState| {
-                state.calibrate();
-            },
-        ),
-        button::button(
-            match state.screen {
-                Screen::Diagnostics(_) => "Exit diagnostics",
-                _ => "Diagnostics",
-            },
-            match state.screen {
-                Screen::Diagnostics(_) => ButtonStyle::filled(),
-                _ => ButtonStyle::default(),
-            },
-            |state: &mut AppState| {
-                state.screen = match &state.screen {
-                    Screen::Diagnostics(previous_screen) => {
-                        // If already in diagnostics, go back to previous screen
-                        *previous_screen.clone()
+        state.interface.borrow().calibrating_enable().then(|| {
+            button::button(
+                "Calibrate",
+                ButtonStyle::default(),
+                |state: &mut AppState| {
+                    state.interface.borrow_mut().calibrating_calibrate();
+                },
+            )
+        }),
+        state.interface.borrow().diagnostics_enable().then(|| {
+            button::button(
+                match state.screen {
+                    Screen::Diagnostics(_) => "Exit diagnostics",
+                    _ => "Diagnostics",
+                },
+                match state.screen {
+                    Screen::Diagnostics(_) => ButtonStyle::filled(),
+                    _ => ButtonStyle::default(),
+                },
+                |state: &mut AppState| {
+                    state.screen = match &state.screen {
+                        Screen::Diagnostics(previous_screen) => {
+                            // If already in diagnostics, go back to previous screen
+                            *previous_screen.clone()
+                        }
+                        screen => {
+                            // Otherwise, go to diagnostics, saving current screen
+                            crate::view::ui::Screen::Diagnostics(Box::new(screen.clone()))
+                        }
                     }
-                    screen => {
-                        // Otherwise, go to diagnostics, saving current screen
-                        crate::view::ui::Screen::Diagnostics(Box::new(screen.clone()))
-                    }
-                }
-            },
-        ),
+                },
+            )
+        }),
     ))
     .with_spacing(spacing::COMPONENT)
     .flex_infinite_width(HorizontalAlignment::Center)
