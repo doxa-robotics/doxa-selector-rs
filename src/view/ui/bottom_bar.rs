@@ -22,16 +22,16 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
                 .foreground_color(color::M3_ON_SURFACE),
         }),
         Spacer::default(),
-        state.interface.borrow().calibrating_enable().then(|| {
+        state.interface.calibrating_enable().then(|| {
             button::button(
                 "Calibrate",
                 ButtonStyle::default(),
                 |state: &mut AppState| {
-                    state.interface.borrow_mut().calibrating_calibrate();
+                    state.interface.calibrating_calibrate();
                 },
             )
         }),
-        state.interface.borrow().diagnostics_enable().then(|| {
+        state.interface.diagnostics_enable().then(|| {
             button::button(
                 match state.screen {
                     Screen::Diagnostics(_) => "Exit diagnostics",

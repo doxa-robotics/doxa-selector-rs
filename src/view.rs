@@ -49,7 +49,7 @@ const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(1);
 pub async fn run<C: crate::route::Category, R: 'static>(
     display: vexide::display::Display,
     external: Rc<RefCell<crate::ExternalState>>,
-    interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
+    interface: impl crate::DoxaSelectInterface + 'static,
     routes: Vec<crate::Route<C, R>>,
     categories: Vec<C>,
 ) {
@@ -108,7 +108,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
     loop {
         // Update state
         {
-            let interface = app_state.interface.borrow();
+            let interface = app_state.interface.as_ref();
             let mut external = app_state.external.borrow_mut();
             external.show_calibrating = interface.calibrating_enable();
             external.show_diagnostics = interface.diagnostics_enable();

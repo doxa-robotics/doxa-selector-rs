@@ -86,21 +86,14 @@ impl<C: Category, R> DoxaSelect<C, R> {
             selection: 0,
             show_diagnostics: interface.diagnostics_enable(),
             show_calibrating: interface.calibrating_enable(),
-            calibrating: false,
+            calibrating: *interface.calibrating_calibrating().borrow(),
         }));
 
         Self {
             state: state.clone(),
             routes: routes.to_vec(),
             _task: task::spawn(async move {
-                view::run(
-                    display,
-                    state,
-                    Rc::new(RefCell::new(interface)),
-                    routes.to_vec(),
-                    categories,
-                )
-                .await;
+                view::run(display, state, interface, routes.to_vec(), categories).await;
             }),
         }
     }

@@ -66,24 +66,24 @@ pub(super) struct AppState {
     /// External state shared with the main DoxaSelect struct
     pub external: Rc<RefCell<ExternalState>>,
     /// Interface to the crate user
-    pub interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
+    pub interface: Box<dyn crate::DoxaSelectInterface>,
 }
 
 impl AppState {
     pub fn new(
         external: Rc<RefCell<ExternalState>>,
-        interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
+        interface: impl crate::DoxaSelectInterface + 'static,
     ) -> Self {
         Self {
             screen: Screen::default(),
             external,
-            interface,
+            interface: Box::new(interface),
             diagnostics: None,
         }
     }
 
     fn refresh_diagnostics(&mut self) {
-        let interface = self.interface.borrow();
+        let interface = &*self.interface;
         if interface.diagnostics_enable() {
             self.diagnostics = Some(interface.diagnostics_diagnostics());
         } else {
