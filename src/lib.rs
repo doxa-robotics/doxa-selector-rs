@@ -26,14 +26,27 @@ struct ExternalState {
 }
 
 pub trait DoxaSelectInterface {
+    /// Whether the calibration feature is enabled.
+    ///
+    /// If true, a "Calibrate" button will be shown in the UI. You must implement
+    /// the calibration logic in `calibrating_calibrate` and `calibrating_calibrating`
+    /// if this returns true.
     fn calibrating_enable(&self) -> bool {
         false
     }
-    fn calibrating_calibrate(&mut self) {}
+    /// Starts the calibration process.
+    fn calibrating_calibrate(&mut self) {
+        panic!("You must implement calibrating_calibrate if calibrating_enable returns true.");
+    }
+    /// Returns a Rc<RefCell<bool>> that indicates whether calibration is in progress.
     fn calibrating_calibrating(&self) -> Rc<RefCell<bool>> {
-        Rc::new(RefCell::new(false))
+        panic!("You must implement calibrating_calibrating if calibrating_enable returns true.");
     }
 
+    /// Whether the diagnostics screen is enabled.
+    ///
+    /// If true, a "Diagnostics" button will be shown in the UI. You must implement
+    /// the diagnostics_diagnostics method if this returns true.
     fn diagnostics_enable(&self) -> bool {
         false
     }
@@ -41,7 +54,11 @@ pub trait DoxaSelectInterface {
     ///
     /// There is a maximum of 16 entries.
     fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
-        Vec::new()
+        panic!("You must implement diagnostics_diagnostics if diagnostics_enable returns true.");
+    }
+    /// Whether the diagnostics screen should use a compact layout.
+    fn diagnostics_compact(&self) -> bool {
+        false
     }
 }
 
@@ -89,7 +106,11 @@ impl<C: Category, R> DoxaSelect<C, R> {
             selection: 0,
             show_diagnostics: interface.diagnostics_enable(),
             show_calibrating: interface.calibrating_enable(),
-            calibrating: *interface.calibrating_calibrating().borrow(),
+            calibrating: if interface.calibrating_enable() {
+                *interface.calibrating_calibrating().borrow()
+            } else {
+                false
+            },
         }));
 
         Self {
