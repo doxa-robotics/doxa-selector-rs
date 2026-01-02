@@ -83,14 +83,14 @@ impl AppState {
     }
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub(super) enum Screen {
     #[default]
     SelectCategory,
     SelectRoute(usize),
     ConfirmSelection,
     Confirmed,
-    Diagnostics,
+    Diagnostics(Box<Screen>),
 }
 
 pub(super) fn root_view<'a>(
@@ -149,6 +149,12 @@ pub(super) fn root_view<'a>(
     ))
     .animated(
         Animation::ease_in_out(Duration::from_millis(400)),
-        state.screen,
+        match state.screen {
+            Screen::SelectCategory => 0,
+            Screen::SelectRoute(_) => 1,
+            Screen::ConfirmSelection => 2,
+            Screen::Confirmed => 3,
+            Screen::Diagnostics(_) => 4,
+        },
     )
 }

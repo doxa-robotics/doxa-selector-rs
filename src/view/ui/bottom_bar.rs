@@ -23,17 +23,32 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
         }),
         Spacer::default(),
         button::button(
-            "Recalibrate",
+            "Calibrate",
             ButtonStyle::default(),
             |state: &mut AppState| {
                 state.calibrate();
             },
         ),
         button::button(
-            "Diagnostics",
-            ButtonStyle::default(),
+            match state.screen {
+                Screen::Diagnostics(_) => "Exit diagnostics",
+                _ => "Diagnostics",
+            },
+            match state.screen {
+                Screen::Diagnostics(_) => ButtonStyle::filled(),
+                _ => ButtonStyle::default(),
+            },
             |state: &mut AppState| {
-                state.screen = crate::view::ui::Screen::Diagnostics;
+                state.screen = match &state.screen {
+                    Screen::Diagnostics(previous_screen) => {
+                        // If already in diagnostics, go back to previous screen
+                        *previous_screen.clone()
+                    }
+                    screen => {
+                        // Otherwise, go to diagnostics, saving current screen
+                        crate::view::ui::Screen::Diagnostics(Box::new(screen.clone()))
+                    }
+                }
             },
         ),
     ))

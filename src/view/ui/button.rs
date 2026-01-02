@@ -60,6 +60,16 @@ impl ButtonStyle<'_> {
             ..Self::default()
         }
     }
+
+    pub fn filled() -> Self {
+        Self {
+            background: color::M3_PRIMARY,
+            foreground: color::M3_ON_PRIMARY,
+            background_pressed: color::M3_PRIMARY,
+            foreground_pressed: color::M3_ON_PRIMARY,
+            ..Self::default()
+        }
+    }
 }
 
 pub fn button<'a, C: 'a, OnTapFn>(
