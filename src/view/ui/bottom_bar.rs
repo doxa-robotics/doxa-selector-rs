@@ -49,7 +49,9 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
                         }
                         screen => {
                             // Otherwise, go to diagnostics, saving current screen
-                            crate::view::ui::Screen::Diagnostics(Box::new(screen.clone()))
+                            let screen = screen.clone();
+                            state.refresh_diagnostics();
+                            crate::view::ui::Screen::Diagnostics(Box::new(screen))
                         }
                     }
                 },

@@ -16,7 +16,9 @@ mod select_category_screen;
 mod select_route_screen;
 mod selector;
 
-/// Application data shared across views
+/// Application data shared across views.
+///
+/// Will not change after initialization.
 ///
 /// Clone is intentionally not implemented because this is a large data structure
 #[derive(Debug)]
@@ -55,11 +57,15 @@ impl AppData {
     }
 }
 
-#[derive(Clone)]
 pub(super) struct AppState {
+    /// Current screen
     pub screen: Screen,
+    /// Cached diagnostics data
+    diagnostics: Option<Vec<(String, String)>>,
 
+    /// External state shared with the main DoxaSelect struct
     pub external: Rc<RefCell<ExternalState>>,
+    /// Interface to the crate user
     pub interface: Rc<RefCell<dyn crate::DoxaSelectInterface>>,
 }
 
@@ -72,6 +78,16 @@ impl AppState {
             screen: Screen::default(),
             external,
             interface,
+            diagnostics: None,
+        }
+    }
+
+    fn refresh_diagnostics(&mut self) {
+        let interface = self.interface.borrow();
+        if interface.diagnostics_enable() {
+            self.diagnostics = Some(interface.diagnostics_diagnostics());
+        } else {
+            self.diagnostics = None;
         }
     }
 }

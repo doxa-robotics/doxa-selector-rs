@@ -80,6 +80,15 @@ impl doxa_selector::DoxaSelectInterface for DoxaSelectInterfaceImpl {
     fn calibrating_calibrating(&self) -> std::rc::Rc<std::cell::RefCell<bool>> {
         self.calibrating.clone()
     }
+    fn diagnostics_enable(&self) -> bool {
+        true
+    }
+    fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
+        vec![
+            ("Battery Voltage".to_string(), "12.5V".to_string()),
+            ("CPU Temperature".to_string(), "45C".to_string()),
+        ]
+    }
 }
 
 #[vexide::main]
