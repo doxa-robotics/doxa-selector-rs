@@ -37,6 +37,9 @@ pub trait DoxaSelectInterface {
     fn diagnostics_enable(&self) -> bool {
         false
     }
+    /// Returns a list of key-value pairs representing diagnostics data.
+    ///
+    /// There is a maximum of 16 entries.
     fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
         Vec::new()
     }

@@ -18,8 +18,8 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
         .clone()
         .expect("Diagnostics should be Some when in diagnostics screen");
     assert!(
-        diagnostics.len() < 12,
-        "Diagnostics should be less than 12 lines"
+        diagnostics.len() <= 16,
+        "Diagnostics should be less or equal to than 16 lines"
     );
 
     let len = diagnostics.len();
@@ -35,8 +35,8 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
                 }),
             ))
             .with_spacing(spacing::ELEMENT),
-            ForEach::<12>::new_vertical(
-                &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11][0..len],
+            ForEach::<16>::new_vertical(
+                &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15][0..len],
                 move |i| {
                     let (key, value) = diagnostics[*i as usize].clone();
                     HStack::new((
