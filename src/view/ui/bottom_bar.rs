@@ -1,17 +1,26 @@
-use buoyant::view::prelude::*;
+use buoyant::{match_view, view::prelude::*};
 
 use crate::view::{
     color, spacing,
     ui::{
         button::{self, ButtonStyle},
-        AppState,
+        AppState, Screen,
     },
 };
 
-pub fn bottom_bar(_state: &AppState) -> impl View<color::Color, AppState> {
+pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
     HStack::new((
-        Text::new("99484A DOXA Robotics", &*crate::view::font::CAPTION)
-            .foreground_color(color::M3_ON_SURFACE),
+        match_view!(state.screen, {
+            Screen::Confirmed => button::button(
+                "Change route",
+                ButtonStyle::default(),
+                |state: &mut AppState| {
+                    state.screen = crate::view::ui::Screen::SelectCategory;
+                },
+            ),
+            _ => Text::new("99484A DOXA Robotics", &*crate::view::font::CAPTION)
+                .foreground_color(color::M3_ON_SURFACE),
+        }),
         Spacer::default(),
         button::button(
             "Recalibrate",
@@ -24,7 +33,7 @@ pub fn bottom_bar(_state: &AppState) -> impl View<color::Color, AppState> {
             "Diagnostics",
             ButtonStyle::default(),
             |state: &mut AppState| {
-                state.screen = crate::view::ui::Screen::SelectCategory;
+                state.screen = crate::view::ui::Screen::Diagnostics;
             },
         ),
     ))

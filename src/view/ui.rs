@@ -90,6 +90,7 @@ pub(super) enum Screen {
     SelectRoute(usize),
     ConfirmSelection,
     Confirmed,
+    Diagnostics,
 }
 
 pub(super) fn root_view<'a>(
