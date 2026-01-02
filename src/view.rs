@@ -22,6 +22,7 @@ use crate::{
 
 mod color;
 mod font;
+mod image;
 mod spacing;
 mod ui;
 
@@ -140,7 +141,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
         for event in touch_events.chain(synthetic_events) {
             let result =
                 view.handle_event(&event, &context, target_tree, &mut app_state, &mut state);
-            // Bouyant seems to have a bug where external events don't trigger recompute_view
+            // Buoyant seems to have a bug where external events don't trigger recompute_view
             if result.recompute_view || matches!(event, Event::External) {
                 // Join source and target trees at current time, "freezing" animation progress
                 target_tree.join_from(source_tree, &domain);

@@ -2,7 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Duration};
 
 use buoyant::{transition::Move, view::prelude::*};
 
-use crate::{ExternalState, Route};
+use crate::{view::image, ExternalState, Route};
 
 mod bottom_bar;
 mod button;
@@ -87,6 +87,14 @@ pub(super) fn root_view<'a>(
     data: &'a AppData,
 ) -> impl View<crate::view::color::Color, AppState> + use<'a> {
     ZStack::new((
+        image::LOGO_CROPPED.as_ref().map(|img| {
+            Image::new(img)
+                .flex_frame()
+                .with_alignment(Alignment::BottomTrailing)
+                .with_infinite_max_height()
+                .with_infinite_max_width()
+                .opacity(100)
+        }),
         VStack::new((
             // In principle, it would be better to use a match_view! here, but
             // because buoyant's implementation of OneOfN doesn't implement
@@ -105,13 +113,13 @@ pub(super) fn root_view<'a>(
                 },
                 matches!(state.screen, Screen::ConfirmSelection)
                     .then(|| EmptyView.transition(Move::bottom())),
-            ))
-            .animated(
-                Animation::ease_in_out(Duration::from_millis(400)),
-                state.screen,
-            ),
+            )),
             bottom_bar::bottom_bar(state),
         )),
         calibrating_overlay::calibrating_overlay(state),
     ))
+    .animated(
+        Animation::ease_in_out(Duration::from_millis(400)),
+        state.screen,
+    )
 }

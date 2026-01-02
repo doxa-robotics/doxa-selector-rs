@@ -24,6 +24,8 @@ vexide-embedded-graphics = { git = "https://github.com/zabackary/vexide-embedded
 rusttype = "0.9.3"
 embedded-touch = "0.3.0"
 unwrap-infallible = { version = "1.0.0", features = ["never_type"] }
+tinybmp = "0.6.0"
+log = "0.4.29"
 
 [dev-dependencies]
 autons = "0.2.0"
