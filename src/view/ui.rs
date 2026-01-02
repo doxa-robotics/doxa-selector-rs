@@ -57,7 +57,7 @@ impl AppData {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) struct AppState {
-    screen: Screen,
+    pub screen: Screen,
 
     pub external: Rc<RefCell<ExternalState>>,
 }

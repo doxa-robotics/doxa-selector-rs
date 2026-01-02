@@ -42,7 +42,9 @@ const FRAME_DURATION: Duration = Duration::from_micros(1_000_000 / FPS as u64);
 const MIN_FRAME_GAP: Duration = Duration::from_millis(5);
 
 /// Time before we stop rendering due to inactivity
-const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(5);
+///
+/// Maximum animation duration
+const INACTIVITY_TIMEOUT: Duration = Duration::from_secs(1);
 
 pub async fn run<C: crate::route::Category, R: 'static>(
     display: vexide::display::Display,
@@ -99,26 +101,43 @@ pub async fn run<C: crate::route::Category, R: 'static>(
 
     // Store the last external state to detect changes
     let mut external_state = app_state.external.borrow().clone();
+    let mut previous_mode = vexide::competition::mode();
+    let mut should_render = true;
 
     loop {
         let frame_start = Instant::now();
 
+        let mode = vexide::competition::mode();
         let time = app_start.elapsed();
         let domain = AnimationDomain::top_level(time);
 
-        if last_update.elapsed() < INACTIVITY_TIMEOUT {
-            // Render animated transition between source and target trees
-            Render::render_animated(
-                &mut target,
-                source_tree,
-                target_tree,
-                &color::M3_PRIMARY_CONTAINER,
-                &domain,
-            );
+        if should_render {
+            if mode == vexide::competition::CompetitionMode::Autonomous {
+                // In autonomous mode, we skip animations to save compute
+                Render::render(target_tree, &mut target, &color::M3_PRIMARY_CONTAINER);
+            } else {
+                // Render animated transition between source and target trees
+                Render::render_animated(
+                    &mut target,
+                    source_tree,
+                    target_tree,
+                    &color::M3_PRIMARY_CONTAINER,
+                    &domain,
+                );
+            }
             // Flush the rendered frame to the display
             display.render();
             // Clear the render target for the next frame
             target.clear(color::M3_BACKGROUND);
+        }
+
+        // For the next frame, determine if we should keep rendering
+        if mode != vexide::competition::CompetitionMode::Autonomous {
+            // In non-autonomous mode, we render until inactivity timeout
+            should_render = last_update.elapsed() < INACTIVITY_TIMEOUT;
+        } else {
+            // In autonomous mode, we don't render at all unless there's activity
+            should_render = false;
         }
 
         // Handle events
@@ -135,6 +154,15 @@ pub async fn run<C: crate::route::Category, R: 'static>(
             if *current_external != external_state {
                 events.push(Event::External);
                 external_state = app_state.external.borrow().clone();
+            }
+            if previous_mode != mode {
+                if mode == vexide::competition::CompetitionMode::Autonomous {
+                    // Switch to confirmed screen in autonomous mode, since
+                    // that means that the match has started
+                    app_state.screen = crate::view::ui::Screen::Confirmed;
+                    events.push(Event::External);
+                }
+                previous_mode = mode;
             }
             events
         };
@@ -154,6 +182,7 @@ pub async fn run<C: crate::route::Category, R: 'static>(
                 let layout = view.layout(&target.size().into(), &env, &mut app_state, &mut state);
                 *target_tree =
                     view.render_tree(&layout, Point::default(), &env, &mut app_state, &mut state);
+                should_render = true;
             }
             last_update = Instant::now();
         }
