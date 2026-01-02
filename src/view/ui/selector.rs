@@ -18,7 +18,7 @@ where
 {
     ScrollView::new(
         VStack::new((
-            Text::new(title, &*font::HEADING),
+            Text::new(title, &*font::MONTSERRAT).with_font_size(font::SIZE_HEADING),
             ForEach::<12>::new_vertical(
                 // It's a bit hacky, but it works.
                 // To split the categories into two columns, we tell buoyant that

@@ -58,8 +58,8 @@ checksum = "812e12b5285cc515a9c72a5c1d3b6d46a19dac5acfef5265968c166106e31dd3"
 
 [[package]]
 name = "buoyant"
-version = "0.6.0"
-source = "git+https://github.com/zabackary/buoyant.git?branch=patch#8fd2c4da084f49838a8badcce17bbf4719cdd63d"
+version = "0.7.0-alpha.0"
+source = "git+https://github.com/zabackary/buoyant.git?branch=patch#79104081f45dec3cc7e62adac5adebef642f1337"
 dependencies = [
  "embedded-graphics",
  "embedded-graphics-core",
@@ -69,6 +69,7 @@ dependencies = [
  "fixed-macro",
  "heapless",
  "paste",
+ "rusttype",
  "u8g2-fonts",
 ]
 

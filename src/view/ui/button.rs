@@ -1,14 +1,13 @@
 use std::time::Duration;
 
 use buoyant::{primitives::UnitPoint, view::prelude::*};
-use embedded_ttf::FontTextStyle;
 
 use crate::view::{
-    color::{self, Color},
+    color::{self},
     font,
 };
 
-pub struct ButtonStyle<'a> {
+pub struct ButtonStyle {
     pub height: u32,
     pub horizontal_padding: u32,
     pub vertical_padding: u32,
@@ -19,10 +18,10 @@ pub struct ButtonStyle<'a> {
 
     pub animation_duration: Duration,
 
-    pub text_style: &'a FontTextStyle<Color>,
+    pub font_size: u32,
 }
 
-impl Default for ButtonStyle<'_> {
+impl Default for ButtonStyle {
     fn default() -> Self {
         Self {
             height: 24,
@@ -33,17 +32,18 @@ impl Default for ButtonStyle<'_> {
             background_pressed: color::M3_SECONDARY_CONTAINER,
             foreground_pressed: color::M3_ON_SECONDARY_CONTAINER,
             animation_duration: Duration::from_millis(200),
-            text_style: &*font::CAPTION,
+            font_size: font::SIZE_CAPTION,
         }
     }
 }
 
-impl ButtonStyle<'_> {
+impl ButtonStyle {
     pub fn large() -> Self {
         Self {
             height: 32,
             horizontal_padding: 16,
             vertical_padding: 12,
+            font_size: font::SIZE_BODY,
             ..Self::default()
         }
     }
@@ -57,6 +57,7 @@ impl ButtonStyle<'_> {
             height: 32,
             horizontal_padding: 16,
             vertical_padding: 12,
+            font_size: font::SIZE_BODY,
             ..Self::default()
         }
     }
@@ -74,14 +75,15 @@ impl ButtonStyle<'_> {
 
 pub fn button<'a, C: 'a, OnTapFn>(
     label: &'a str,
-    style: ButtonStyle<'a>,
+    style: ButtonStyle,
     on_tap: OnTapFn,
 ) -> impl View<color::Color, C> + 'a
 where
     OnTapFn: Fn(&mut C) + 'a,
 {
     Button::new(on_tap, move |is_pressed: bool| {
-        Text::new(label, style.text_style)
+        Text::new(label, &*font::MONTSERRAT)
+            .with_font_size(style.font_size)
             .foreground_color(if is_pressed {
                 style.foreground_pressed
             } else {

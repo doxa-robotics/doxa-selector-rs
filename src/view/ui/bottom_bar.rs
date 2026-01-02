@@ -1,7 +1,7 @@
 use buoyant::{match_view, view::prelude::*};
 
 use crate::view::{
-    color, spacing,
+    color, font, spacing,
     ui::{
         button::{self, ButtonStyle},
         AppState, Screen,
@@ -18,7 +18,8 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
                     state.screen = crate::view::ui::Screen::SelectCategory;
                 },
             ),
-            _ => Text::new("99484A DOXA Robotics", &*crate::view::font::CAPTION)
+            _ => Text::new("99484A DOXA Robotics", &*font::MONTSERRAT)
+                .with_font_size(font::SIZE_CAPTION)
                 .foreground_color(color::M3_ON_SURFACE),
         }),
         Spacer::default(),

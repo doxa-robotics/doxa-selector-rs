@@ -1,7 +1,7 @@
 use buoyant::view::{prelude::ViewModifier, shape::RoundedRectangle, HStack, Text, VStack, View};
 
 use crate::view::{
-    color, spacing,
+    color, font, spacing,
     ui::button::{self, ButtonStyle},
     AppState,
 };
@@ -13,13 +13,16 @@ pub fn confirm_selection_screen(
     let (route_name, route_description) = data.routes[route_index];
 
     VStack::new((
-        Text::new("Confirm selection", &*crate::view::font::HEADING)
+        Text::new("Confirm selection", &*font::MONTSERRAT)
+            .with_font_size(font::SIZE_HEADING)
             .foreground_color(color::M3_ON_SURFACE),
         VStack::new((
-            Text::new(route_name, &*crate::view::font::BODY)
+            Text::new(route_name, &*font::MONTSERRAT)
+                .with_font_size(font::SIZE_BODY)
                 .multiline_text_alignment(buoyant::view::HorizontalTextAlignment::Center)
                 .foreground_color(color::M3_ON_SURFACE),
-            Text::new(route_description, &*crate::view::font::CAPTION)
+            Text::new(route_description, &*font::MONTSERRAT)
+                .with_font_size(font::SIZE_CAPTION)
                 .multiline_text_alignment(buoyant::view::HorizontalTextAlignment::Center)
                 .foreground_color(color::M3_ON_SURFACE_VARIANT),
         ))

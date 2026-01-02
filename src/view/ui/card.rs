@@ -1,14 +1,13 @@
 use std::time::Duration;
 
 use buoyant::{primitives::UnitPoint, view::prelude::*};
-use embedded_ttf::FontTextStyle;
 
 use crate::view::{
-    color::{self, Color},
+    color::{self},
     font,
 };
 
-pub struct CardStyle<'a> {
+pub struct CardStyle {
     pub height: u32,
     pub padding: u32,
     pub radius: u16,
@@ -22,10 +21,10 @@ pub struct CardStyle<'a> {
 
     pub animation_duration: Duration,
 
-    pub text_style: &'a FontTextStyle<Color>,
+    pub font_size: u32,
 }
 
-impl Default for CardStyle<'_> {
+impl Default for CardStyle {
     fn default() -> Self {
         Self {
             height: 24,
@@ -38,14 +37,14 @@ impl Default for CardStyle<'_> {
             background_pressed: color::M3_SURFACE_CONTAINER,
             foreground_pressed: color::M3_ON_SURFACE,
             animation_duration: Duration::from_millis(200),
-            text_style: &*font::BODY,
+            font_size: font::SIZE_BODY,
         }
     }
 }
 
 pub fn card<'a, C: 'a, OnTapFn>(
     label: &'a str,
-    style: CardStyle<'a>,
+    style: CardStyle,
     on_tap: OnTapFn,
 ) -> impl View<color::Color, C> + 'a
 where
@@ -66,7 +65,8 @@ where
                 )
                 .scale_effect(if is_pressed { 0.9 } else { 1.0 }, UnitPoint::center())
                 .animated(Animation::ease_out(style.animation_duration), is_pressed),
-            Text::new(label, style.text_style)
+            Text::new(label, &*font::MONTSERRAT)
+                .with_font_size(style.font_size)
                 .foreground_color(if is_pressed {
                     style.foreground_pressed
                 } else {

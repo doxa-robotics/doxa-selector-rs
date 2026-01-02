@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use buoyant::{transition::Move, view::prelude::*};
 
-use crate::view::{color, spacing, ui::AppState};
+use crate::view::{color, font, spacing, ui::AppState};
 
 pub fn calibrating_overlay(state: &AppState) -> impl View<color::Color, AppState> {
     let calibrating = state.external.borrow().calibrating;
@@ -15,10 +15,12 @@ pub fn calibrating_overlay(state: &AppState) -> impl View<color::Color, AppState
                 .overlay(
                     Alignment::Center,
                     VStack::new((
-                        Text::new("Calibrating...", &*crate::view::font::HEADING)
+                        Text::new("Calibrating...", &*font::MONTSERRAT)
+                            .with_font_size(font::SIZE_HEADING)
                             .foreground_color(color::M3_ON_ERROR_CONTAINER)
                             .hint_background_color(color::M3_ERROR_CONTAINER),
-                        Text::new("Please do not move the robot.", &*crate::view::font::BODY)
+                        Text::new("Please do not move the robot.", &*font::MONTSERRAT)
+                            .with_font_size(font::SIZE_BODY)
                             .foreground_color(color::M3_ON_SURFACE_VARIANT)
                             .hint_background_color(color::M3_ERROR_CONTAINER),
                     ))

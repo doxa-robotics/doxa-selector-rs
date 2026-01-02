@@ -4,7 +4,7 @@ use buoyant::view::{
 };
 
 use crate::view::{
-    color, spacing,
+    color, font, spacing,
     ui::button::{self, ButtonStyle},
     AppState,
 };
@@ -31,7 +31,8 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
     ScrollView::new(
         VStack::new((
             HStack::new((
-                Text::new("Diagnostics", &*crate::view::font::HEADING)
+                Text::new("Diagnostics", &*font::MONTSERRAT)
+                    .with_font_size(font::SIZE_HEADING)
                     .foreground_color(color::M3_ON_SURFACE),
                 Spacer::default(),
                 button::button("Refresh", ButtonStyle::default(), |state: &mut AppState| {
@@ -45,25 +46,21 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
                 move |i| {
                     let (key, value) = diagnostics[*i as usize].clone();
                     HStack::new((
-                        Text::new(
-                            key,
-                            if compact {
-                                &*crate::view::font::CAPTION
+                        Text::new(key, &*font::MONTSERRAT)
+                            .with_font_size(if compact {
+                                font::SIZE_CAPTION
                             } else {
-                                &*crate::view::font::BODY
-                            },
-                        )
-                        .foreground_color(color::M3_ON_SURFACE),
+                                font::SIZE_BODY
+                            })
+                            .foreground_color(color::M3_ON_SURFACE),
                         Spacer::default(),
-                        Text::new(
-                            value,
-                            if compact {
-                                &*crate::view::font::CAPTION
+                        Text::new(value, &*font::MONTSERRAT)
+                            .with_font_size(if compact {
+                                font::SIZE_CAPTION
                             } else {
-                                &*crate::view::font::BODY
-                            },
-                        )
-                        .foreground_color(color::M3_ON_SURFACE_VARIANT),
+                                font::SIZE_BODY
+                            })
+                            .foreground_color(color::M3_ON_SURFACE_VARIANT),
                     ))
                     .padding(
                         buoyant::view::prelude::Edges::All,
