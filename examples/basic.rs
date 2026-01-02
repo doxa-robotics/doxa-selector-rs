@@ -85,8 +85,14 @@ impl doxa_selector::DoxaSelectInterface for DoxaSelectInterfaceImpl {
     }
     fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
         vec![
-            ("Battery Voltage".to_string(), "12.5V".to_string()),
-            ("CPU Temperature".to_string(), "45C".to_string()),
+            (
+                "Battery charge".to_string(),
+                format!("{:.0}%", vexide::battery::capacity() * 100.0),
+            ),
+            (
+                "Uptime".to_string(),
+                format!("{:.1} seconds", vexide::time::system_uptime().as_secs_f32()),
+            ),
         ]
     }
 }

@@ -64,4 +64,5 @@ pub fn bottom_bar(state: &AppState) -> impl View<color::Color, AppState> {
     .background_color(color::M3_SURFACE_CONTAINER_HIGHEST, Capsule)
     .padding(Edges::Horizontal, spacing::EDGE)
     .padding(Edges::Bottom, spacing::EDGE)
+    .geometry_group()
 }

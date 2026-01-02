@@ -12,6 +12,7 @@ mod button;
 mod calibrating_overlay;
 mod card;
 mod confirm_selection_screen;
+mod diagnostics_screen;
 mod select_category_screen;
 mod select_route_screen;
 mod selector;
@@ -143,13 +144,16 @@ pub(super) fn root_view<'a>(
                         data,
                         state.external.borrow().selection,
                     )
-                    .transition(Slide::top())
+                    .transition(Move::top())
                 }),
                 matches!(state.screen, Screen::Confirmed).then(|| {
                     EmptyView
                         .flex_frame()
                         .with_infinite_max_height()
                         .with_infinite_max_width()
+                }),
+                matches!(state.screen, Screen::Diagnostics(_)).then(|| {
+                    diagnostics_screen::diagnostics_screen(state).transition(Move::bottom())
                 }),
             )),
             bottom_bar::bottom_bar(state),
