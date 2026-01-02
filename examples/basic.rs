@@ -1,132 +1,128 @@
-#![no_std]
-#![no_main]
+use std::{cell::RefCell, rc::Rc};
 
-extern crate alloc;
+use autons::prelude::*;
+use doxa_selector::{route, DoxaSelect};
+use vexide::prelude::*;
 
-use alloc::{boxed::Box, collections::btree_map::BTreeMap, rc::Rc, string::ToString, vec::Vec};
-use core::{
-    error::Error,
-    fmt::{Debug, Display},
-};
-
-use async_trait::async_trait;
-use doxa_selector_rs::{AutonRoutine, CompeteWithSelector, CompeteWithSelectorExt as _};
-use vexide::{core::sync::Mutex, prelude::*};
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum Category {
-    RouteA,
-    RouteB,
+    Category1,
+    Category2,
+    Category3,
+    Category4,
+    Category5,
+    Category6,
+    Category7,
+    Category8,
+    Category9,
+    Category10,
+    Category11,
+    Category12,
 }
 
-impl Display for Category {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl std::fmt::Display for Category {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Category::RouteA => write!(f, "RouteA"),
-            Category::RouteB => write!(f, "RouteB"),
+            Category::Category1 => write!(f, "Category 1"),
+            Category::Category2 => write!(f, "Category 2"),
+            Category::Category3 => write!(f, "Category 3"),
+            Category::Category4 => write!(f, "Category 4"),
+            Category::Category5 => write!(f, "Category 5"),
+            Category::Category6 => write!(f, "Category 6"),
+            Category::Category7 => write!(f, "Category 7"),
+            Category::Category8 => write!(f, "Category 8"),
+            Category::Category9 => write!(f, "Category 9"),
+            Category::Category10 => write!(f, "Category 10"),
+            Category::Category11 => write!(f, "Category 11"),
+            Category::Category12 => write!(f, "Category 12"),
         }
     }
 }
 
-struct RouteA;
+struct Robot {}
 
-#[async_trait]
-impl AutonRoutine<TestRobot> for RouteA {
-    type Return = Result<(), Box<dyn Error>>;
-
-    fn name(&self) -> &'static str {
-        "RouteA"
+impl Robot {
+    async fn route_1(&mut self) {
+        println!("Route 1");
     }
-
-    fn description(&self) -> &'static str {
-        "This is Route A"
-    }
-
-    async fn run(&self, context: &mut TestRobot) -> Result<(), Box<dyn Error>> {
-        println!("RouteA run");
-        Ok(())
+    async fn route_2(&mut self) {
+        println!("Route 2");
     }
 }
 
-struct RouteB;
+impl SelectCompete for Robot {}
 
-#[async_trait]
-impl AutonRoutine<TestRobot> for RouteB {
-    type Return = Result<(), Box<dyn Error>>;
+struct DoxaSelectInterfaceImpl {
+    calibrating: Rc<RefCell<bool>>,
+}
 
-    fn name(&self) -> &'static str {
-        "RouteB"
-    }
-
-    fn description(&self) -> &'static str {
-        "This is Route B"
-    }
-
-    async fn run(&self, context: &mut TestRobot) -> Result<(), Box<dyn Error>> {
-        println!("RouteB run");
-        Ok(())
+impl Default for DoxaSelectInterfaceImpl {
+    fn default() -> Self {
+        Self {
+            calibrating: Rc::new(RefCell::new(false)),
+        }
     }
 }
 
-struct TestRobot {
-    imu: Rc<Mutex<InertialSensor>>,
-}
-
-impl CompeteWithSelector for TestRobot {
-    type Category = Category;
-    type Return = Result<(), Box<dyn Error>>;
-
-    async fn driver(&mut self) {
-        println!("Driver control");
+impl doxa_selector::DoxaSelectInterface for DoxaSelectInterfaceImpl {
+    fn calibrating_enable(&self) -> bool {
+        true
     }
-
-    fn autonomous_routes<'a, 'b>(
-        &'b self,
-    ) -> BTreeMap<Category, &'a [&'a dyn AutonRoutine<TestRobot, Return = Self::Return>]>
-    where
-        Self: 'a,
-    {
-        let mut map = BTreeMap::<Category, &[&dyn AutonRoutine<_, Return = _>]>::new();
-        map.insert(Category::RouteA, &[&RouteA]);
-        map.insert(Category::RouteB, &[&RouteB]);
-        map
-    }
-
-    fn is_gyro_calibrating(&self) -> bool {
-        self.imu
-            .try_lock()
-            .map(|imu| imu.is_calibrating().unwrap_or(false))
-            // If we can't lock the mutex, assume it's calibrating
-            .unwrap_or(true)
-    }
-
-    fn calibrate_gyro(&mut self) {
-        let imu = self.imu.clone();
-        spawn(async move {
-            let mut imu = imu.lock().await;
-            if let Err(_) = imu.calibrate().await {
-                // Try, try again
-                _ = imu.calibrate().await;
-            }
+    fn calibrating_calibrate(&mut self) {
+        *self.calibrating.borrow_mut() = true;
+        let calibrating = self.calibrating.clone();
+        vexide::task::spawn(async move {
+            vexide::time::sleep(std::time::Duration::from_secs(2)).await;
+            *calibrating.borrow_mut() = false;
         })
         .detach();
     }
-
-    fn diagnostics(&self) -> Vec<(alloc::string::String, alloc::string::String)> {
-        alloc::vec![(
-            "IMU heading".into(),
-            self.imu
-                .try_lock()
-                .map(|imu| imu.heading().unwrap_or(0.0).to_string())
-                .unwrap_or("Unavailable".into()),
-        )]
+    fn calibrating_calibrating(&self) -> std::rc::Rc<std::cell::RefCell<bool>> {
+        self.calibrating.clone()
+    }
+    fn diagnostics_enable(&self) -> bool {
+        true
+    }
+    fn diagnostics_diagnostics(&self) -> Vec<(String, String)> {
+        vec![
+            (
+                "Battery charge".to_string(),
+                format!("{:.0}%", vexide::battery::capacity() * 100.0),
+            ),
+            (
+                "Uptime".to_string(),
+                format!("{:.1} seconds", vexide::time::system_uptime().as_secs_f32()),
+            ),
+        ]
     }
 }
 
 #[vexide::main]
 async fn main(peripherals: Peripherals) {
-    let robot = TestRobot {
-        imu: Rc::new(Mutex::new(InertialSensor::new(peripherals.port_20))),
-    };
-    robot.compete_with_selector(peripherals.display).await;
+    let robot = Robot {};
+
+    robot
+        .compete(DoxaSelect::new(
+            peripherals.display,
+            [
+                route!(Category::Category1, Robot::route_1),
+                route!(
+                    Category::Category2,
+                    Robot::route_2,
+                    "My very very long description for route 2."
+                ),
+                route!(Category::Category3, Robot::route_1),
+                route!(Category::Category4, Robot::route_2),
+                route!(Category::Category5, Robot::route_1),
+                route!(Category::Category6, Robot::route_2),
+                route!(Category::Category7, Robot::route_1),
+                route!(Category::Category8, Robot::route_2),
+                route!(Category::Category9, Robot::route_1),
+                route!(Category::Category10, Robot::route_2),
+                route!(Category::Category11, Robot::route_1),
+                route!(Category::Category12, Robot::route_2),
+            ],
+            DoxaSelectInterfaceImpl::default(),
+        ))
+        .await;
 }
