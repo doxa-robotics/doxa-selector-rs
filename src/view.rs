@@ -208,11 +208,6 @@ pub async fn run<C: crate::route::Category, R: 'static>(
 
         let elapsed = frame_start.elapsed();
         let sleep_time = Duration::max(FRAME_DURATION.saturating_sub(elapsed), MIN_FRAME_GAP);
-        // println!(
-        //     "\x1B[1A\x1B[KFPS: {:.2} | {:.0}%",
-        //     1.0 / (elapsed + sleep_time).as_secs_f32(),
-        //     (elapsed.as_secs_f32() / FRAME_DURATION.as_secs_f32()) * 100.0
-        // );
         // Throttle to maintain constant FPS
         vexide::time::sleep(sleep_time).await;
     }
