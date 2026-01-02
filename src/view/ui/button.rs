@@ -38,11 +38,38 @@ impl Default for ButtonStyle<'_> {
     }
 }
 
-pub fn button<'a, C: 'a>(
+impl ButtonStyle<'_> {
+    pub fn large() -> Self {
+        Self {
+            height: 32,
+            horizontal_padding: 16,
+            vertical_padding: 12,
+            ..Self::default()
+        }
+    }
+
+    pub fn filled_large() -> Self {
+        Self {
+            background: color::M3_PRIMARY,
+            foreground: color::M3_ON_PRIMARY,
+            background_pressed: color::M3_PRIMARY,
+            foreground_pressed: color::M3_ON_PRIMARY,
+            height: 32,
+            horizontal_padding: 16,
+            vertical_padding: 12,
+            ..Self::default()
+        }
+    }
+}
+
+pub fn button<'a, C: 'a, OnTapFn>(
     label: &'a str,
     style: ButtonStyle<'a>,
-    on_tap: fn(&mut C),
-) -> impl View<color::Color, C> + 'a {
+    on_tap: OnTapFn,
+) -> impl View<color::Color, C> + 'a
+where
+    OnTapFn: Fn(&mut C) + 'a,
+{
     Button::new(on_tap, move |is_pressed: bool| {
         Text::new(label, style.text_style)
             .foreground_color(if is_pressed {

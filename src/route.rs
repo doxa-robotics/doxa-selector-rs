@@ -55,6 +55,14 @@ macro_rules! route {
             callback: |robot| ::std::boxed::Box::pin($func(robot)),
         }
     }};
+    ($category:expr, $func:path, $description:expr) => {{
+        ::doxa_selector::Route {
+            category: $category,
+            name: stringify!($func),
+            description: $description,
+            callback: |robot| ::std::boxed::Box::pin($func(robot)),
+        }
+    }};
     ($category:expr, $name:expr, $func:path) => {{
         ::doxa_selector::Route {
             category: $category,

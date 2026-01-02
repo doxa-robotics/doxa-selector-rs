@@ -1,6 +1,9 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc, time::Duration};
 
-use buoyant::{transition::Move, view::prelude::*};
+use buoyant::{
+    transition::{Move, Slide},
+    view::prelude::*,
+};
 
 use crate::{view::image, ExternalState, Route};
 
@@ -8,16 +11,21 @@ mod bottom_bar;
 mod button;
 mod calibrating_overlay;
 mod card;
+mod confirm_selection_screen;
 mod select_category_screen;
 mod select_route_screen;
 mod selector;
 
-#[derive(Debug, Clone)]
+/// Application data shared across views
+///
+/// Clone is intentionally not implemented because this is a large data structure
+#[derive(Debug)]
 pub(super) struct AppData {
     /// Vec<(category_index, category_name, category_index)>
     category_names: Vec<(usize, String, usize)>,
     /// (category_index) -> Vec<(route_index, route_name, global_route_index)>
     route_names_map: HashMap<usize, Vec<(usize, String, usize)>>,
+    routes: Vec<(&'static str, &'static str)>,
 }
 
 impl AppData {
@@ -42,6 +50,7 @@ impl AppData {
         Self {
             category_names,
             route_names_map,
+            routes: routes.iter().map(|r| (r.name, r.description)).collect(),
         }
     }
 }
@@ -80,6 +89,7 @@ pub(super) enum Screen {
     SelectCategory,
     SelectRoute(usize),
     ConfirmSelection,
+    Confirmed,
 }
 
 pub(super) fn root_view<'a>(
@@ -93,8 +103,15 @@ pub(super) fn root_view<'a>(
                 .with_alignment(Alignment::BottomTrailing)
                 .with_infinite_max_height()
                 .with_infinite_max_width()
-                .opacity(100)
         }),
+        if matches!(state.screen, Screen::Confirmed) {
+            image::SELECTED_BACKGROUND
+                .as_ref()
+                .map(|img| Image::new(img).flex_frame())
+        } else {
+            None
+        }
+        .transition(Slide::top()),
         VStack::new((
             // In principle, it would be better to use a match_view! here, but
             // because buoyant's implementation of OneOfN doesn't implement
@@ -111,8 +128,19 @@ pub(super) fn root_view<'a>(
                     ),
                     _ => None,
                 },
-                matches!(state.screen, Screen::ConfirmSelection)
-                    .then(|| EmptyView.transition(Move::bottom())),
+                matches!(state.screen, Screen::ConfirmSelection).then(|| {
+                    confirm_selection_screen::confirm_selection_screen(
+                        data,
+                        state.external.borrow().selection,
+                    )
+                    .transition(Slide::top())
+                }),
+                matches!(state.screen, Screen::Confirmed).then(|| {
+                    EmptyView
+                        .flex_frame()
+                        .with_infinite_max_height()
+                        .with_infinite_max_width()
+                }),
             )),
             bottom_bar::bottom_bar(state),
         )),

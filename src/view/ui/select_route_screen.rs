@@ -29,7 +29,6 @@ pub fn select_route_screen(
             routes,
             move |state: &mut AppState, route_index: usize| {
                 let global_route_index = routes[route_index].2;
-                println!("Selected route index: {}", global_route_index);
                 state.external.borrow_mut().selection = global_route_index;
                 state.screen = crate::view::ui::Screen::ConfirmSelection;
             },

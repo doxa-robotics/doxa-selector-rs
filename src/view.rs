@@ -157,6 +157,13 @@ pub async fn run<C: crate::route::Category, R: 'static>(
             }
             last_update = Instant::now();
         }
+        // Update the external state. The view could have changed it, and we don't
+        // need to re-render for internally-generated changes.
+        // We know the view changed it and not external code because there's no
+        // await points here.
+        if *app_state.external.borrow() != external_state {
+            external_state = app_state.external.borrow().clone();
+        }
 
         let elapsed = frame_start.elapsed();
         let sleep_time = Duration::max(FRAME_DURATION.saturating_sub(elapsed), MIN_FRAME_GAP);

@@ -59,7 +59,11 @@ async fn main(peripherals: Peripherals) {
             peripherals.display,
             [
                 route!(Category::Category1, Robot::route_1),
-                route!(Category::Category2, Robot::route_2),
+                route!(
+                    Category::Category2,
+                    Robot::route_2,
+                    "My very very long description for route 2."
+                ),
                 route!(Category::Category3, Robot::route_1),
                 // route!(Category::Category4, Robot::route_2),
                 // route!(Category::Category5, Robot::route_1),
