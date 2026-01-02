@@ -11,6 +11,9 @@ use crate::view::{
 
 // This screen is very inefficient and bleeds memory, but it should be okay since
 // diagnostics mode is only intended for short-term use not during a match.
+//
+// This is because we must return a static lifetime from the function, but the
+// diagnostics data is dynamic.
 
 pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Color, AppState> {
     let diagnostics = state
@@ -36,6 +39,7 @@ pub fn diagnostics_screen(state: &crate::view::AppState) -> impl View<color::Col
             ))
             .with_spacing(spacing::ELEMENT),
             ForEach::<16>::new_vertical(
+                // ForEach requires a static lifetime for items
                 &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15][0..len],
                 move |i| {
                     let (key, value) = diagnostics[*i as usize].clone();
