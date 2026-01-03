@@ -36,8 +36,8 @@ pub trait DoxaSelectInterface {
     fn calibrating_calibrate(&mut self) {
         panic!("when calibrating ui is enabled, you must implement calibrating_calibrate");
     }
-    /// Returns a Rc<RefCell<bool>> that indicates whether calibration is in progress.
-    fn calibrating_calibrating(&self) -> Rc<RefCell<bool>> {
+    /// Returns a bool that indicates whether calibration is in progress.
+    fn calibrating_calibrating(&self) -> bool {
         panic!("when calibrating ui is enabled, you must implement calibrating_calibrating to return the calibration state");
     }
 
@@ -97,7 +97,7 @@ impl<C: Category, R> DoxaSelect<C, R> {
         let state = Rc::new(RefCell::new(ExternalState {
             selection: 0,
             calibrating: if interface.calibrating_enable() {
-                *interface.calibrating_calibrating().borrow()
+                interface.calibrating_calibrating()
             } else {
                 false
             },
