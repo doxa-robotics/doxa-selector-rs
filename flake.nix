@@ -28,7 +28,6 @@
           buildInputs = [
             cargo-v5'
             pkgs.cargo-binutils
-            pkgs.slint-lsp
             (rustToolchain.override {
               extensions = [
                 "rust-analyzer"
