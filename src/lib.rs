@@ -75,14 +75,12 @@ pub struct DoxaSelect<C: Category, R: 'static> {
 
 impl<C: Category, R> DoxaSelect<C, R> {
     /// Creates a new selector from a [`Display`] peripheral and array of routes.
-    pub fn new<const N: usize>(
+    pub fn new(
         display: Display,
-        routes: [Route<C, R>; N],
+        routes: &[Route<C, R>],
         interface: impl DoxaSelectInterface + 'static,
     ) -> Self {
-        const {
-            assert!(N > 0, "DoxaSelect requires at least one route.");
-        }
+        assert!(routes.len() > 0, "DoxaSelect requires at least one route.");
 
         let categories = {
             let mut cats = routes
@@ -103,11 +101,12 @@ impl<C: Category, R> DoxaSelect<C, R> {
             },
         }));
 
+        let routes_vec = routes.to_vec();
         Self {
             state: state.clone(),
             routes: routes.to_vec(),
             _task: task::spawn(async move {
-                view::run(display, state, interface, routes.to_vec(), categories).await;
+                view::run(display, state, interface, routes_vec, categories).await;
             }),
         }
     }
